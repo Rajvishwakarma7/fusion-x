@@ -80,3 +80,14 @@ export const signinUser = async (payload: signInType) => {
     throw error;
   }
 };
+
+
+export const getMe = async(userId:string)=>{
+  try {
+    const user = await User.findById(userId).lean();
+    return GenResObj(Code.OK, true, "User found", user);
+  } catch (error) {
+    console.log("🚀 ~ getMe ~ error:", error);
+    throw error;
+  }
+}

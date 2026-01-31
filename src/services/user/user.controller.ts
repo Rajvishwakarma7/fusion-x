@@ -27,5 +27,16 @@ export const userController = {
       next(error);
     }
   },
+
+  getMe: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.userData?.userId as string;
+      const {code,data}:TGenResObj = await UserProvider.getMe(userId);
+      res.status(code).json(data);
+      return;
+    } catch (error) {
+      next(error);
+    }
+  }
 };
 

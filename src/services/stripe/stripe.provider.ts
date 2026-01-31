@@ -15,6 +15,10 @@ export const connectStripe = async (userId: string) => {
     }
     const checkStripeAccount = await StripeConnectAccount.findOne({ userId });
 
+    if(checkStripeAccount && checkStripeAccount.isActive && checkStripeAccount.chargesEnabled && checkStripeAccount.payoutsEnabled && checkStripeAccount.detailsSubmitted){
+      return GenResObj(Code.OK, true, 'Account is already connected', checkStripeAccount);
+    }
+
     let stripeAccountId;
     if (checkStripeAccount) {
       stripeAccountId = checkStripeAccount.stripeAccountId;
@@ -59,8 +63,6 @@ export const connectStripe = async (userId: string) => {
 
       type: 'account_onboarding',
     });
-
-    console.log('🚀 ~ connectStripe ~ accountLink:', accountLink);
 
     return GenResObj(Code.OK, true, 'stripe account link created', accountLink);
   } catch (error) {
