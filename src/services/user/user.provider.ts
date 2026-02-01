@@ -1,9 +1,9 @@
-import User from "../../models/user.model.js";
-import { HttpStatusCodes as Code } from "../../utils/Enums.utils.js";
-import { GenResObj } from "../../utils/responseFormatter.utils.js";
-import { createToken } from "./user.helper.js";
-import { signInType, signUpType } from "./user.validate.js";
-import bcrypt from "bcrypt";
+import User from '../../models/user.model.js';
+import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
+import { GenResObj } from '../../utils/responseFormatter.utils.js';
+import { createToken } from './user.helper.js';
+import { signInType, signUpType } from './user.validate.js';
+import bcrypt from 'bcrypt';
 export const signupUser = async (payload: signUpType) => {
   try {
     const { fullName, email, password } = payload;
@@ -13,11 +13,10 @@ export const signupUser = async (payload: signUpType) => {
       return GenResObj(
         Code.BAD_REQUEST,
         false,
-        "User with this email already exists"
+        'User with this email already exists'
       );
     }
     const hashpassword = await bcrypt.hash(password, 10);
-    console.log("🚀 ~ signupUser ~ hashpassword:", hashpassword);
 
     const newUser = await User.create({
       ...payload,
@@ -25,15 +24,14 @@ export const signupUser = async (payload: signUpType) => {
       email,
       password: hashpassword,
     });
-    console.log("🚀 ~ signupUser ~ newUser:", newUser);
 
     if (!newUser) {
-      return GenResObj(Code.BAD_REQUEST, false, "User not created");
+      return GenResObj(Code.BAD_REQUEST, false, 'User not created');
     }
 
-    return GenResObj(Code.CREATED, true, "User created successfully", newUser);
+    return GenResObj(Code.CREATED, true, 'User created successfully', newUser);
   } catch (error) {
-    console.log("🚀 ~ signupUser ~ error:", error);
+    console.log('🚀 ~ signupUser ~ error:', error);
     throw error;
   }
 };
@@ -42,7 +40,7 @@ export const signinUser = async (payload: signInType) => {
   try {
     const { email, password } = payload;
     const checkAblUser = await User.findOne(
-      { email, deleted: false },
+      { email, deleted: false }
       // {
       //   role: 1,
       //   isVerified: 1,
@@ -55,7 +53,7 @@ export const signinUser = async (payload: signInType) => {
       return GenResObj(
         Code.BAD_REQUEST,
         false,
-        "User not found Please create account first"
+        'User not found Please create account first'
       );
     }
     const isPasswordMatch = await bcrypt.compare(
@@ -63,7 +61,7 @@ export const signinUser = async (payload: signInType) => {
       checkAblUser.password
     );
     if (!isPasswordMatch) {
-      return GenResObj(Code.BAD_REQUEST, false, "Password is incorrect");
+      return GenResObj(Code.BAD_REQUEST, false, 'Password is incorrect');
     }
 
     let token;
@@ -71,23 +69,22 @@ export const signinUser = async (payload: signInType) => {
       token = createToken(checkAblUser._id.toString(), checkAblUser.role);
     }
 
-    return GenResObj(Code.OK, true, "logged in successfully", {
+    return GenResObj(Code.OK, true, 'logged in successfully', {
       ...checkAblUser,
       token,
     });
   } catch (error) {
-    console.log("🚀 ~ signupUser ~ error:", error);
+    console.log('🚀 ~ signupUser ~ error:', error);
     throw error;
   }
 };
 
-
-export const getMe = async(userId:string)=>{
+export const getMe = async (userId: string) => {
   try {
     const user = await User.findById(userId).lean();
-    return GenResObj(Code.OK, true, "User found", user);
+    return GenResObj(Code.OK, true, 'User found', user);
   } catch (error) {
-    console.log("🚀 ~ getMe ~ error:", error);
+    console.log('🚀 ~ getMe ~ error:', error);
     throw error;
   }
-}
+};
