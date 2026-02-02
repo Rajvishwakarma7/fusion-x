@@ -16,4 +16,10 @@ export const signInValidator = type({
 export type signInType = typeof signInValidator.infer;
 
 
+  export const getMeValidator = type({
+    userId: "string",
+    role: "string",
+  });
+
+  export type getMeType = typeof getMeValidator.infer;
 

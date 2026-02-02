@@ -34,7 +34,6 @@ const userSchema = new Schema<TUserModel>(
     timestamps: true,
   }
 );
-userSchema.index({ email: 1 }, { sparse: true, unique: true });
 userSchema.set("toJSON", {
   virtuals: true,
   transform: (doc, ret, options) => {

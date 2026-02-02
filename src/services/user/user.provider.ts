@@ -1,8 +1,9 @@
+import StripeConnectAccount from '../../models/stripeConnectAccount.model.js';
 import User from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import { createToken } from './user.helper.js';
-import { signInType, signUpType } from './user.validate.js';
+import { getMeType, signInType, signUpType } from './user.validate.js';
 import bcrypt from 'bcrypt';
 export const signupUser = async (payload: signUpType) => {
   try {
@@ -79,10 +80,32 @@ export const signinUser = async (payload: signInType) => {
   }
 };
 
-export const getMe = async (userId: string) => {
+export const getMe = async (payload: getMeType) => {
   try {
-    const user = await User.findById(userId).lean();
-    return GenResObj(Code.OK, true, 'User found', user);
+    const { userId, role } = payload;
+
+    console.log('🚀 ~ getMe ~ payload:', payload);
+
+    const user = await User.findById(userId).select('-password').lean();
+    if (!user) {
+      return GenResObj(Code.BAD_REQUEST, false, 'User not found');
+    }
+
+    const userData: any = { ...user };
+
+    if (role === 'seller') {
+      const accountConnect = await StripeConnectAccount.findOne({
+        userId,
+      });
+
+      if (accountConnect) {
+        userData.accountConnect = accountConnect;
+      }else{
+        userData.accountConnect = null
+      }
+    };
+
+    return GenResObj(Code.OK, true, 'User found', userData);
   } catch (error) {
     console.log('🚀 ~ getMe ~ error:', error);
     throw error;
