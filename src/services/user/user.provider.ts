@@ -1,5 +1,5 @@
 import StripeConnectAccount from '../../models/stripeConnectAccount.model.js';
-import User from '../../models/user.model.js';
+import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import { createToken } from './user.helper.js';
@@ -9,7 +9,7 @@ export const signupUser = async (payload: signUpType) => {
   try {
     const { fullName, email, password } = payload;
 
-    const user = await User.findOne({ email, deleted: false });
+    const user = await users.findOne({ email, deleted: false });
     if (user) {
       return GenResObj(
         Code.BAD_REQUEST,
@@ -19,7 +19,7 @@ export const signupUser = async (payload: signUpType) => {
     }
     const hashpassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
+    const newUser = await users.create({
       ...payload,
       fullName: fullName,
       email,
@@ -40,7 +40,7 @@ export const signupUser = async (payload: signUpType) => {
 export const signinUser = async (payload: signInType) => {
   try {
     const { email, password } = payload;
-    const checkAblUser = await User.findOne(
+    const checkAblUser = await users.findOne(
       { email, deleted: false }
       // {
       //   role: 1,
@@ -86,7 +86,7 @@ export const getMe = async (payload: getMeType) => {
 
     console.log('🚀 ~ getMe ~ payload:', payload);
 
-    const user = await User.findById(userId).select('-password').lean();
+    const user = await users.findById(userId).select('-password').lean();
     if (!user) {
       return GenResObj(Code.BAD_REQUEST, false, 'User not found');
     }

@@ -38,7 +38,9 @@ DbInstance.then(async () => {
 declare global {
   namespace Express {
     interface Request {
-      userData?: TTokenUser | undefined;
+      userData?: TTokenUser;
     }
   }
 }
+
+

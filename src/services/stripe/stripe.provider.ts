@@ -1,15 +1,269 @@
 import { stripe } from '../../config/stripe.config.js';
 import StripeConnectAccount from '../../models/stripeConnectAccount.model.js';
-import User from '../../models/user.model.js';
+import Subscriptions from '../../models/subscirption.model.js';
+import Transactions from '../../models/transaction.model.js';
+import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
+import { getStripeCustomerId } from './stripe.helper.js';
+import { cancelPlanType, createPlanType, getUserMembershipType, upgradeSubscriptionType, userTransactionsHistoryType } from './stripe.validate.js';
+
+
+export const listPlans = async () => {
+  try {
+
+    const plans = await stripe.prices.search({
+      query: 'active:"true"',
+    });
+
+    // const plans = await stripe.prices.list({
+    //   active: true,
+    //   expand: ['data.product'],
+    // });
+
+    return GenResObj(Code.OK, true, 'Plans fetched successfully', plans);
+
+  } catch (error) {
+    console.log('error in listPlans :>> ', error);
+    throw error;
+  }
+};
+
+export const createCheckoutSession = async (payload: createPlanType) => {
+  try {
+    const { priceId, userId } = payload;
+
+    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+
+    if (userSubscription) {
+      return GenResObj(Code.OK, true, 'User has already active subscription', userSubscription);
+    }
+
+    const stripeCustomerId = await getStripeCustomerId(userId);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: stripeCustomerId,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        userId,
+        priceId,
+      },
+      success_url: `${process.env.FRONTEND_BASE_URL}/payment/success`,
+      cancel_url: `${process.env.FRONTEND_BASE_URL}/payment/failed`,
+    });
+
+    // create subscription
+
+    const subscription = await Subscriptions.create({
+      userId,
+      isActive: false,
+      stripeCustomerId,
+      status: 'inactive',
+    });
+    // create transaction
+
+    // const transaction = await Transactions.create({
+    //   userId,
+    //   stripeCustomerId,
+    //   status: 'pending',
+    // });
+
+    // update session metadata
+    await stripe.checkout.sessions.update(session.id, {
+      metadata: {
+        ...session.metadata,
+        subscriptionId: subscription._id.toString() || '',
+        // transactionId: transaction._id.toString() || '',
+      },
+    });
+
+    return GenResObj(Code.OK, true, 'Checkout Session created successfully', {
+      sessionId: session.id,
+      sessionUrl: session.url,
+    });
+
+  } catch (error) {
+    console.log('error in createCheckoutSession :>> ', error);
+    throw error;
+  }
+};
+
+export const cancelSubscription = async (payload: cancelPlanType) => {
+  try {
+    const { userId } = payload;
+
+    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+
+    if (!userSubscription || !userSubscription.stripeSubscriptionId) {
+      return GenResObj(Code.OK, true, 'User has no active subscription');
+    }
+
+    await stripe.subscriptions.update(userSubscription.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+
+    return GenResObj(Code.OK, true, 'Subscription canceled successfully');
+
+  } catch (error) {
+    console.log('error in cancelSubscription :>> ', error);
+    throw error;
+  }
+};
+
+export const upgradeSubscription = async (payload: upgradeSubscriptionType) => {
+  try {
+    const { userId, priceId } = payload;
+
+    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' });
+
+    if (!userSubscription || !userSubscription.stripeSubscriptionId) {
+      return GenResObj(Code.BAD_REQUEST, false, 'User has no active subscription');
+    }
+
+    if (userSubscription.plan === 'yearly') {
+      return GenResObj(Code.BAD_REQUEST, false, 'User already on yearly plan');
+    }
+
+    if (userSubscription.priceId === priceId) {
+      return GenResObj(Code.BAD_REQUEST, false, 'User already has this plan');
+    };
+
+    // Get Stripe subscription
+    const subscription = await stripe.subscriptions.retrieve(
+      userSubscription.stripeSubscriptionId,
+    );
+
+    const subscriptionItemId = subscription.items.data[0].id;
+
+    // Upgrade plan
+    await stripe.subscriptions.update(
+      userSubscription.stripeSubscriptionId,
+      {
+        items: [
+          {
+            id: subscriptionItemId,
+            price: priceId, // yearly price
+          },
+        ],
+        proration_behavior: 'create_prorations',
+      },
+    );
+
+    return GenResObj(Code.OK, true, 'Subscription upgraded successfully');
+
+  } catch (error) {
+    console.log('error in updateSubscription :>> ', error);
+    throw error;
+  }
+};
+
+export const userTransactionsHistory = async (payload: userTransactionsHistoryType) => {
+  try {
+    const { userId, status, page, pageSize } = payload;
+
+    const skip = (page - 1) * pageSize;
+
+    const user = await users.findById(userId).lean();
+
+    if (!user?.stripeCustomerId) {
+      return GenResObj(Code.BAD_REQUEST, false, 'Stripe customer not found for this user');
+    }
+
+    const match: any = { stripeCustomerId: user.stripeCustomerId };
+
+    if (status) {
+      match.status = status;
+    }
+
+    const transactionsData = await Transactions.aggregate([
+      {
+        $match: match,
+      },
+
+      {
+        $facet: {
+          data: [
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+            {
+              $skip: skip,
+            },
+            {
+              $limit: pageSize,
+            },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+    ]);
+
+    const transaction = transactionsData[0].data;
+
+    const totalRecords = transactionsData[0].totalCount[0]?.count || 0;
+
+    const totalPages = Math.ceil(totalRecords / pageSize);
+
+    const hasNextPage = page < totalPages;
+
+    const resObj = {
+      transaction,
+      totalRecords,
+      pageSize,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+    };
+
+    return GenResObj(
+      Code.OK,
+      true,
+      'Transactions fetched successfully',
+      resObj,
+    );
+
+  } catch (error) {
+    console.log('error in userTransactionsHistory :>> ', error);
+    throw error;
+  }
+};
+
+export const getUserMembership = async (payload: getUserMembershipType) => {
+  try {
+    const { userId } = payload;
+
+    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+
+    if (!userSubscription || !userSubscription.priceId) {
+      return GenResObj(Code.OK, true, 'User has no active subscription');
+    }
+
+    return GenResObj(Code.OK, true, 'User membership fetched successfully', userSubscription);
+
+  } catch (error) {
+    console.log('error in getUserMembership :>> ', error);
+    throw error;
+  }
+};
+
+
+
+// connect account flow ----->>>>
 
 export const connectStripe = async (userId: string) => {
   try {
     if (!userId) {
       return GenResObj(Code.BAD_REQUEST, false, 'User ID is required');
     }
-    const user = await User.findById(userId).lean();
+    const user = await users.findById(userId).lean();
     if (!user) {
       return GenResObj(Code.BAD_REQUEST, false, 'User not found');
     }
@@ -71,29 +325,6 @@ export const connectStripe = async (userId: string) => {
   }
 };
 
-export const createCheckoutSessionUrl = async (payload: any) => {
-  try {
-    const { userId, priceId } = payload;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
-    });
-
-    return GenResObj(Code.OK, true, 'Checkout session created', session.url);
-  } catch (error) {
-    console.log('🚀 ~ signupUser ~ error:', error);
-    throw error;
-  }
-};
 
 export const connectedAccountStatus = async (userId: any) => {
   try {
