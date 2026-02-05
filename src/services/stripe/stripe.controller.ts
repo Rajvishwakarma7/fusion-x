@@ -10,10 +10,10 @@ import {
 } from './stripe.validate';
 
 export const stripeController = {
-  listPlans: async (_req: Request, res: Response, next: NextFunction) => {
+  listPlans: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { code, data } = await StripeProvider.listPlans();
-
+    
       res.status(code).json(data);
 
       return;
@@ -130,7 +130,7 @@ export const stripeController = {
       const { code, data }: TGenResObj =
         await StripeProvider.connectStripe(userId);
       res.status(code).json(data);
-      return; 
+      return;
     } catch (error) {
       next(error);
     }

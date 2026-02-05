@@ -81,6 +81,7 @@ export const authCheck = (role: string[], checkRole: boolean = true) => {
           });
         }
 
+
         // Attach user data to the request object and proceed
         req.userData = { userId: decodedToken.id, role: checkAvlUser.role };
         next();

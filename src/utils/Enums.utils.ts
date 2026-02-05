@@ -45,8 +45,8 @@ export enum TransactionType {
 }
 
 export type TTokenUser = {
-  userId: string;
-  role: string;
+  userId: string ;
+  role?: string;
 };
 
 export const getEnumValues = (data: Record<string, string>) =>
