@@ -18,12 +18,16 @@ const subscriptionSchema = new Schema(
 
     plan: {
       type: String,
-      enum: ['free', 'monthly', 'yearly'],
+      enum: ['MONTHLY', 'QUARTERLY', 'SEMI_YEAR', 'ANNUAL', 'LIFE_TIME'],
     },
-
+    planType: {
+      type: String,
+      enum: ["recurring", "one_time"],
+    },
     interval: {
       type: String,
-      enum: ['month', 'year'],
+      enum: ['day', 'week', 'month', 'year','one_time'],
+      default: 'month',
     },
 
     status: {
@@ -39,10 +43,17 @@ const subscriptionSchema = new Schema(
     },
     renewalDate: { type: Date },
     cancelledDate: { type: Date },
-
   },
-  { strict: true, timestamps: true },
+  { strict: true, timestamps: true }
 );
+
+// Indexes for faster queries
+subscriptionSchema.index({ userId: 1, status: 1 });
+subscriptionSchema.index({ stripeSubscriptionId: 1 });
+subscriptionSchema.index({ status: 1 });
+subscriptionSchema.index({ stripeCustomerId: 1 });
+
+
 
 const Subscriptions = mongoose.model('Subscriptions', subscriptionSchema);
 
