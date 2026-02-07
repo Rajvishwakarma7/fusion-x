@@ -6,10 +6,17 @@ import { UserRoles } from "../../utils/Enums.utils";
 const router = Router()
 
 router.route('/list-plans').get(authCheck([UserRoles.USER]),StripeController.listPlans);
-router.route("/create-checkout-session").post( authCheck([UserRoles.USER]), StripeController.createCheckoutSession)
+
+router.route("/create-checkout-session-subscription").post( authCheck([UserRoles.USER]), StripeController.createCheckoutSessionSubscription)
+
+router.route("/create-checkout-session-one-time").post( authCheck([UserRoles.USER]), StripeController.createCheckoutSessionOneTime)
+
 router.route('/cancel-subscription').post(authCheck([UserRoles.USER]), StripeController.cancelSubscription);
+
 router.route('/upgrade-subscription').post(authCheck([UserRoles.USER]), StripeController.upgradeSubscription);
+
 router.route('/user-transactions-history').get(authCheck([UserRoles.USER]), StripeController.userTransactionsHistory);
+
 router.route('/get-user-membership').get(authCheck([UserRoles.USER]), StripeController.getUserMembership);
 
 // connect account 

@@ -29,43 +29,50 @@ export const listPlans = async () => {
   }
 };
 
-export const createCheckoutSession = async (payload: createPlanType) => {
+export const createCheckoutSessionSubscription = async (payload: createPlanType) => {
   try {
     const { priceId, userId } = payload;
 
-    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+    // const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
 
-    if (userSubscription) {
-      return GenResObj(Code.OK, true, 'User has already active subscription', userSubscription);
-    }
+    // if (userSubscription) {
+    //   return GenResObj(Code.OK, true, 'User has already active subscription', userSubscription);
+    // }
 
     const stripeCustomerId = await getStripeCustomerId(userId);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: stripeCustomerId,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        userId,
-        priceId,
-      },
-      success_url: `${process.env.FRONTEND_BASE_URL}/payment/success`,
-      cancel_url: `${process.env.FRONTEND_BASE_URL}/payment/failed`,
-    });
+    console.log("🚀 ~ createCheckoutSessionSubscription ~ stripeCustomerId:", stripeCustomerId)
+
+    const priceDetails = await stripe.prices.retrieve(priceId,{
+      expand: ['product'],
+    })
+    console.log("🚀 ~ createCheckoutSessionSubscription ~ priceDetails:", priceDetails)
+
+    // const session = await stripe.checkout.sessions.create({
+    //   mode: 'subscription',
+    //   customer: stripeCustomerId,
+    //   line_items: [
+    //     {
+    //       price: priceId,
+    //       quantity: 1,
+    //     },
+    //   ],
+    //   metadata: {
+    //     userId,
+    //     priceId,
+    //   },
+    //   success_url: `${process.env.FRONTEND_BASE_URL}/payment/success`,
+    //   cancel_url: `${process.env.FRONTEND_BASE_URL}/payment/failed`,
+    // });
 
     // create subscription
 
-    const subscription = await Subscriptions.create({
-      userId,
-      isActive: false,
-      stripeCustomerId,
-      status: 'inactive',
-    });
+    // const subscription = await Subscriptions.create({
+    //   userId,
+    //   isActive: false,
+    //   stripeCustomerId,
+    //   status: 'inactive',
+    // });
     // create transaction
 
     // const transaction = await Transactions.create({
@@ -75,21 +82,94 @@ export const createCheckoutSession = async (payload: createPlanType) => {
     // });
 
     // update session metadata
-    await stripe.checkout.sessions.update(session.id, {
-      metadata: {
-        ...session.metadata,
-        subscriptionId: subscription._id.toString() || '',
-        // transactionId: transaction._id.toString() || '',
-      },
-    });
+    // await stripe.checkout.sessions.update(session.id, {
+    //   metadata: {
+    //     ...session.metadata,
+    //     subscriptionId: subscription._id.toString() || '',
+    //     // transactionId: transaction._id.toString() || '',
+    //   },
+    // });
 
     return GenResObj(Code.OK, true, 'Checkout Session created successfully', {
-      sessionId: session.id,
-      sessionUrl: session.url,
+      // sessionId: session.id,
+      // sessionUrl: session.url,
     });
 
   } catch (error) {
-    console.log('error in createCheckoutSession :>> ', error);
+    console.log('error in createCheckoutSessionSubscription :>> ', error);
+    throw error;
+  }
+};
+
+
+export const createCheckoutSessionOneTime = async (payload: createPlanType) => {
+  try {
+    const { priceId, userId } = payload;
+
+    // const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+
+    // if (userSubscription) {
+    //   return GenResObj(Code.OK, true, 'User has already active subscription', userSubscription);
+    // }
+
+    const stripeCustomerId = await getStripeCustomerId(userId);
+
+    console.log("🚀 ~ createCheckoutSessionOneTime ~ stripeCustomerId:", stripeCustomerId)
+
+    const priceDetails = await stripe.prices.retrieve(priceId,{
+      expand: ['product'],
+    })
+    console.log("🚀 ~ createCheckoutSessionOneTime ~ priceDetails:", priceDetails)
+
+    // const session = await stripe.checkout.sessions.create({
+    //   mode: 'subscription',
+    //   customer: stripeCustomerId,
+    //   line_items: [
+    //     {
+    //       price: priceId,
+    //       quantity: 1,
+    //     },
+    //   ],
+    //   metadata: {
+    //     userId,
+    //     priceId,
+    //   },
+    //   success_url: `${process.env.FRONTEND_BASE_URL}/payment/success`,
+    //   cancel_url: `${process.env.FRONTEND_BASE_URL}/payment/failed`,
+    // });
+
+    // create subscription
+
+    // const subscription = await Subscriptions.create({
+    //   userId,
+    //   isActive: false,
+    //   stripeCustomerId,
+    //   status: 'inactive',
+    // });
+    // create transaction
+
+    // const transaction = await Transactions.create({
+    //   userId,
+    //   stripeCustomerId,
+    //   status: 'pending',
+    // });
+
+    // update session metadata
+    // await stripe.checkout.sessions.update(session.id, {
+    //   metadata: {
+    //     ...session.metadata,
+    //     subscriptionId: subscription._id.toString() || '',
+    //     // transactionId: transaction._id.toString() || '',
+    //   },
+    // });
+
+    return GenResObj(Code.OK, true, 'Checkout Session created successfully', {
+      // sessionId: session.id,
+      // sessionUrl: session.url,
+    });
+
+  } catch (error) {
+    console.log('error in createCheckoutSessionOneTime :>> ', error);
     throw error;
   }
 };

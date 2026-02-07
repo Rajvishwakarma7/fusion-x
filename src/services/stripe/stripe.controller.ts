@@ -23,7 +23,7 @@ export const stripeController = {
     }
   },
 
-  createCheckoutSession: async (
+  createCheckoutSessionSubscription: async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -34,7 +34,7 @@ export const stripeController = {
       createPlanValidator.assert(payload);
 
       const { code, data } =
-        await StripeProvider.createCheckoutSession(payload);
+        await StripeProvider.createCheckoutSessionSubscription(payload);
 
       res.status(code).json(data);
     } catch (error) {
@@ -42,6 +42,27 @@ export const stripeController = {
       next(error);
     }
   },
+
+   createCheckoutSessionOneTime: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const payload = { ...req.body, userId: req.userData?.userId };
+
+      createPlanValidator.assert(payload);
+
+      const { code, data } =
+        await StripeProvider.createCheckoutSessionOneTime(payload);
+
+      res.status(code).json(data);
+    } catch (error) {
+      console.log('error is coming from create checkout session:>> ', error);
+      next(error);
+    }
+  },
+
   cancelSubscription: async (
     req: Request,
     res: Response,
