@@ -206,9 +206,9 @@ export const upgradeSubscription = async (payload: upgradeSubscriptionType) => {
       return GenResObj(Code.BAD_REQUEST, false, 'User has no active subscription');
     }
 
-    if (userSubscription.plan === 'yearly') {
-      return GenResObj(Code.BAD_REQUEST, false, 'User already on yearly plan');
-    }
+    // if (userSubscription.plan === 'yearly') {
+    //   return GenResObj(Code.BAD_REQUEST, false, 'User already on yearly plan');
+    // }
 
     if (userSubscription.priceId === priceId) {
       return GenResObj(Code.BAD_REQUEST, false, 'User already has this plan');

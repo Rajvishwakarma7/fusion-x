@@ -25,11 +25,11 @@ const userSchema = new Schema<TUserModel>(
     },
     role:{
         type:String,
-        enum:["user","seller","admin"],
+        enum:["user","organization","admin"],
         default:"user"
-    }
+    },
   },
-  {
+  { 
     strict: true,
     timestamps: true,
   }

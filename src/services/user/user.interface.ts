@@ -1,5 +1,4 @@
 import type { Document, SchemaTimestampsConfig } from "mongoose";
-import { Types } from "mongoose";
 export type TUser = {
   fullName: string;
   email: string;
@@ -8,7 +7,7 @@ export type TUser = {
   deleted: boolean;
   deletedAt: Date;
   stripeCustomerId: string;
-  role: "user" | "seller" | "admin";
+  role: "user" | "organization" | "admin";
 };
 
 export type TUserModel = TUser & Document & SchemaTimestampsConfig;

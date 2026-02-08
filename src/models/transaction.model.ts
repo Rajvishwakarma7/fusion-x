@@ -53,11 +53,7 @@ const transactionSchema = new Schema(
     },
     invoicePdfUrl: {
       type: String,
-    },
-    metadata: {
-      type: Map,
-      of: String,
-    },
+    }
   },
   { timestamps: true }
 );
