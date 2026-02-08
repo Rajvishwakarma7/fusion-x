@@ -1,4 +1,3 @@
-import type { Document, SchemaTimestampsConfig } from "mongoose";
 import { Types } from "mongoose";
 
 export type TStripeConnectModel = {

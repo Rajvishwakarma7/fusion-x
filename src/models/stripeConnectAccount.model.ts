@@ -14,6 +14,6 @@ const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
   { timestamps: true }
 );
 
- const StripeConnectAccount = model("StripeConnectAccount",stripeConnectAccountSchema);
+ const StripeConnectAccount = model("stripe_connect_accounts",stripeConnectAccountSchema);
 
 export default StripeConnectAccount;

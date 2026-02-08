@@ -50,7 +50,6 @@ const subscriptionSchema = new Schema(
 // Indexes for faster queries
 subscriptionSchema.index({ userId: 1, status: 1 });
 subscriptionSchema.index({ stripeSubscriptionId: 1 });
-subscriptionSchema.index({ status: 1 });
 subscriptionSchema.index({ stripeCustomerId: 1 });
 
 
