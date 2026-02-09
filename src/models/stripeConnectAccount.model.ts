@@ -3,7 +3,8 @@ import { TStripeConnectModel } from "../services/stripe/stripe.interface.js";
 
 const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
   {
-    userId: { type: Types.ObjectId, ref: "User" },
+    organizationId: { type: Types.ObjectId, ref: "organizations" },
+    userId: { type: Types.ObjectId, ref: "users" },
     stripeAccountId: { type: String, required: true },
     isActive: { type: Boolean, default: false, required: true },
 

@@ -37,7 +37,7 @@ export const getUserMembershipValidator = type({
 export type getUserMembershipType = typeof getUserMembershipValidator.infer
 
 export const stripeConnectValidator = type({
-  userId: "string"
+  userId: "string",
 });
 
 export type stripeConnectValidatorType = typeof stripeConnectValidator.infer;

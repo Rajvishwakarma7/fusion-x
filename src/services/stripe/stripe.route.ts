@@ -19,9 +19,11 @@ router.route('/user-transactions-history').get(authCheck([UserRoles.USER]), Stri
 
 router.route('/get-user-membership').get(authCheck([UserRoles.USER]), StripeController.getUserMembership);
 
-// connect account 
-router.route("/connect").get( authCheck([UserRoles.SELLER]), StripeController.connectStripe)
+
+
+// connect account  ( organization )
+router.route("/connect").get( authCheck([UserRoles.ORGANIZATION]), StripeController.connectStripe)
 // check connected account status (charges_enabled / payouts_enabled / details_submitted)
-router.route("/connected-account/status").get( authCheck([UserRoles.SELLER]), StripeController.connectedAccountStatus)
+router.route("/connected-account/status").get( authCheck([UserRoles.ORGANIZATION]), StripeController.connectedAccountStatus)
 
 export default router;

@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 export type TStripeConnectModel = {
   organizationId: Types.ObjectId;
-  userId: Types.ObjectId;
+  teamId: Types.ObjectId;
   stripeAccountId: string;
   isActive: boolean;
   chargesEnabled: { type: Boolean; default: false };

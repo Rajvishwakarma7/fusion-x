@@ -5,6 +5,7 @@ const organizationSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'users',
+      required: true,
     },
     organizationName: {
       type: String,
@@ -22,15 +23,7 @@ const organizationSchema = new Schema(
     phone: {
       type: String,
     },
-    country: {
-      type: String,
-    },
-    state: {
-      type: String,
-    },
-    city: {
-      type: String,
-    },
+
     location: {
       type: String,
     },

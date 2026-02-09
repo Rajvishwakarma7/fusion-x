@@ -5,6 +5,7 @@ import {
   cancelPlanValidator,
   createPlanValidator,
   getUserMembershipValidator,
+  stripeConnectValidator,
   upgradeSubscriptionValidator,
   userTransactionsHistoryValidator,
 } from './stripe.validate';
@@ -13,7 +14,7 @@ export const stripeController = {
   listPlans: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { code, data } = await StripeProvider.listPlans();
-    
+
       res.status(code).json(data);
 
       return;
@@ -43,7 +44,7 @@ export const stripeController = {
     }
   },
 
-   createCheckoutSessionOneTime: async (
+  createCheckoutSessionOneTime: async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -146,10 +147,10 @@ export const stripeController = {
 
   connectStripe: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.userData?.userId as string;
-
+      const payload = { userId: req.userData?.userId as string };
+      stripeConnectValidator.assert(payload);
       const { code, data }: TGenResObj =
-        await StripeProvider.connectStripe(userId);
+        await StripeProvider.connectStripe(payload);
       res.status(code).json(data);
       return;
     } catch (error) {

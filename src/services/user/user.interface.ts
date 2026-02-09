@@ -8,6 +8,7 @@ export type TUser = {
   deletedAt: Date;
   stripeCustomerId: string;
   role: "user" | "organization" | "admin";
+  profileCompleted: boolean;
 };
 
 export type TUserModel = TUser & Document & SchemaTimestampsConfig;

@@ -84,8 +84,6 @@ export const getMe = async (payload: getMeType) => {
   try {
     const { userId, role } = payload;
 
-    console.log('🚀 ~ getMe ~ payload:', payload);
-
     const user = await users.findById(userId).select('-password').lean();
     if (!user) {
       return GenResObj(Code.BAD_REQUEST, false, 'User not found');

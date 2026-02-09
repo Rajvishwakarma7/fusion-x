@@ -1,4 +1,5 @@
 import { stripe } from '../../config/stripe.config.js';
+import Organization from '../../models/organization.model.js';
 import StripeConnectAccount from '../../models/stripeConnectAccount.model.js';
 import Subscriptions from '../../models/subscirption.model.js';
 import Transactions from '../../models/transaction.model.js';
@@ -6,12 +7,17 @@ import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import { getStripeCustomerId } from './stripe.helper.js';
-import { cancelPlanType, createPlanType, getUserMembershipType, upgradeSubscriptionType, userTransactionsHistoryType } from './stripe.validate.js';
-
+import {
+  cancelPlanType,
+  createPlanType,
+  getUserMembershipType,
+  stripeConnectValidatorType,
+  upgradeSubscriptionType,
+  userTransactionsHistoryType,
+} from './stripe.validate.js';
 
 export const listPlans = async () => {
   try {
-
     const plans = await stripe.prices.search({
       query: 'active:"true"',
     });
@@ -22,14 +28,15 @@ export const listPlans = async () => {
     // });
 
     return GenResObj(Code.OK, true, 'Plans fetched successfully', plans);
-
   } catch (error) {
     console.log('error in listPlans :>> ', error);
     throw error;
   }
 };
 
-export const createCheckoutSessionSubscription = async (payload: createPlanType) => {
+export const createCheckoutSessionSubscription = async (
+  payload: createPlanType
+) => {
   try {
     const { priceId, userId } = payload;
 
@@ -41,12 +48,18 @@ export const createCheckoutSessionSubscription = async (payload: createPlanType)
 
     const stripeCustomerId = await getStripeCustomerId(userId);
 
-    console.log("🚀 ~ createCheckoutSessionSubscription ~ stripeCustomerId:", stripeCustomerId)
+    console.log(
+      '🚀 ~ createCheckoutSessionSubscription ~ stripeCustomerId:',
+      stripeCustomerId
+    );
 
-    const priceDetails = await stripe.prices.retrieve(priceId,{
+    const priceDetails = await stripe.prices.retrieve(priceId, {
       expand: ['product'],
-    })
-    console.log("🚀 ~ createCheckoutSessionSubscription ~ priceDetails:", priceDetails)
+    });
+    console.log(
+      '🚀 ~ createCheckoutSessionSubscription ~ priceDetails:',
+      priceDetails
+    );
 
     // const session = await stripe.checkout.sessions.create({
     //   mode: 'subscription',
@@ -94,13 +107,11 @@ export const createCheckoutSessionSubscription = async (payload: createPlanType)
       // sessionId: session.id,
       // sessionUrl: session.url,
     });
-
   } catch (error) {
     console.log('error in createCheckoutSessionSubscription :>> ', error);
     throw error;
   }
 };
-
 
 export const createCheckoutSessionOneTime = async (payload: createPlanType) => {
   try {
@@ -114,12 +125,18 @@ export const createCheckoutSessionOneTime = async (payload: createPlanType) => {
 
     const stripeCustomerId = await getStripeCustomerId(userId);
 
-    console.log("🚀 ~ createCheckoutSessionOneTime ~ stripeCustomerId:", stripeCustomerId)
+    console.log(
+      '🚀 ~ createCheckoutSessionOneTime ~ stripeCustomerId:',
+      stripeCustomerId
+    );
 
-    const priceDetails = await stripe.prices.retrieve(priceId,{
+    const priceDetails = await stripe.prices.retrieve(priceId, {
       expand: ['product'],
-    })
-    console.log("🚀 ~ createCheckoutSessionOneTime ~ priceDetails:", priceDetails)
+    });
+    console.log(
+      '🚀 ~ createCheckoutSessionOneTime ~ priceDetails:',
+      priceDetails
+    );
 
     // const session = await stripe.checkout.sessions.create({
     //   mode: 'subscription',
@@ -167,7 +184,6 @@ export const createCheckoutSessionOneTime = async (payload: createPlanType) => {
       // sessionId: session.id,
       // sessionUrl: session.url,
     });
-
   } catch (error) {
     console.log('error in createCheckoutSessionOneTime :>> ', error);
     throw error;
@@ -178,7 +194,11 @@ export const cancelSubscription = async (payload: cancelPlanType) => {
   try {
     const { userId } = payload;
 
-    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+    const userSubscription = await Subscriptions.findOne({
+      userId,
+      isActive: true,
+      status: 'active',
+    }).lean();
 
     if (!userSubscription || !userSubscription.stripeSubscriptionId) {
       return GenResObj(Code.OK, true, 'User has no active subscription');
@@ -189,7 +209,6 @@ export const cancelSubscription = async (payload: cancelPlanType) => {
     });
 
     return GenResObj(Code.OK, true, 'Subscription canceled successfully');
-
   } catch (error) {
     console.log('error in cancelSubscription :>> ', error);
     throw error;
@@ -200,10 +219,18 @@ export const upgradeSubscription = async (payload: upgradeSubscriptionType) => {
   try {
     const { userId, priceId } = payload;
 
-    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' });
+    const userSubscription = await Subscriptions.findOne({
+      userId,
+      isActive: true,
+      status: 'active',
+    });
 
     if (!userSubscription || !userSubscription.stripeSubscriptionId) {
-      return GenResObj(Code.BAD_REQUEST, false, 'User has no active subscription');
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'User has no active subscription'
+      );
     }
 
     // if (userSubscription.plan === 'yearly') {
@@ -212,38 +239,36 @@ export const upgradeSubscription = async (payload: upgradeSubscriptionType) => {
 
     if (userSubscription.priceId === priceId) {
       return GenResObj(Code.BAD_REQUEST, false, 'User already has this plan');
-    };
+    }
 
     // Get Stripe subscription
     const subscription = await stripe.subscriptions.retrieve(
-      userSubscription.stripeSubscriptionId,
+      userSubscription.stripeSubscriptionId
     );
 
     const subscriptionItemId = subscription.items.data[0].id;
 
     // Upgrade plan
-    await stripe.subscriptions.update(
-      userSubscription.stripeSubscriptionId,
-      {
-        items: [
-          {
-            id: subscriptionItemId,
-            price: priceId, // yearly price
-          },
-        ],
-        proration_behavior: 'create_prorations',
-      },
-    );
+    await stripe.subscriptions.update(userSubscription.stripeSubscriptionId, {
+      items: [
+        {
+          id: subscriptionItemId,
+          price: priceId, // yearly price
+        },
+      ],
+      proration_behavior: 'create_prorations',
+    });
 
     return GenResObj(Code.OK, true, 'Subscription upgraded successfully');
-
   } catch (error) {
     console.log('error in updateSubscription :>> ', error);
     throw error;
   }
 };
 
-export const userTransactionsHistory = async (payload: userTransactionsHistoryType) => {
+export const userTransactionsHistory = async (
+  payload: userTransactionsHistoryType
+) => {
   try {
     const { userId, status, page, pageSize } = payload;
 
@@ -252,7 +277,11 @@ export const userTransactionsHistory = async (payload: userTransactionsHistoryTy
     const user = await users.findById(userId).lean();
 
     if (!user?.stripeCustomerId) {
-      return GenResObj(Code.BAD_REQUEST, false, 'Stripe customer not found for this user');
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'Stripe customer not found for this user'
+      );
     }
 
     const match: any = { stripeCustomerId: user.stripeCustomerId };
@@ -307,9 +336,8 @@ export const userTransactionsHistory = async (payload: userTransactionsHistoryTy
       Code.OK,
       true,
       'Transactions fetched successfully',
-      resObj,
+      resObj
     );
-
   } catch (error) {
     console.log('error in userTransactionsHistory :>> ', error);
     throw error;
@@ -320,37 +348,64 @@ export const getUserMembership = async (payload: getUserMembershipType) => {
   try {
     const { userId } = payload;
 
-    const userSubscription = await Subscriptions.findOne({ userId, isActive: true, status: 'active' }).lean();
+    const userSubscription = await Subscriptions.findOne({
+      userId,
+      isActive: true,
+      status: 'active',
+    }).lean();
 
     if (!userSubscription || !userSubscription.priceId) {
       return GenResObj(Code.OK, true, 'User has no active subscription');
     }
 
-    return GenResObj(Code.OK, true, 'User membership fetched successfully', userSubscription);
-
+    return GenResObj(
+      Code.OK,
+      true,
+      'User membership fetched successfully',
+      userSubscription
+    );
   } catch (error) {
     console.log('error in getUserMembership :>> ', error);
     throw error;
   }
 };
 
-
-
 // connect account flow ----->>>>
 
-export const connectStripe = async (userId: string) => {
+export const connectStripe = async (payload: stripeConnectValidatorType) => {
   try {
-    if (!userId) {
-      return GenResObj(Code.BAD_REQUEST, false, 'User ID is required');
-    }
+    const { userId } = payload;
+
     const user = await users.findById(userId).lean();
-    if (!user) {
-      return GenResObj(Code.BAD_REQUEST, false, 'User not found');
+
+    if (!user || !user.profileCompleted) {
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'User not found or profile not completed'
+      );
     }
+
+    const org = await Organization.findOne({ userId }).lean();
+    if (!org) {
+      return GenResObj(Code.BAD_REQUEST, false, 'Organization not found');
+    }
+
     const checkStripeAccount = await StripeConnectAccount.findOne({ userId });
 
-    if(checkStripeAccount && checkStripeAccount.isActive && checkStripeAccount.chargesEnabled && checkStripeAccount.payoutsEnabled && checkStripeAccount.detailsSubmitted){
-      return GenResObj(Code.OK, true, 'Account is already connected', checkStripeAccount);
+    if (
+      checkStripeAccount &&
+      checkStripeAccount.isActive &&
+      checkStripeAccount.chargesEnabled &&
+      checkStripeAccount.payoutsEnabled &&
+      checkStripeAccount.detailsSubmitted
+    ) {
+      return GenResObj(
+        Code.OK,
+        true,
+        'Account is already connected',
+        checkStripeAccount
+      );
     }
 
     let stripeAccountId;
@@ -370,6 +425,7 @@ export const connectStripe = async (userId: string) => {
       await StripeConnectAccount.create({
         userId,
         stripeAccountId: account.id,
+        organizationId: org._id,
       });
     }
 
@@ -387,13 +443,13 @@ export const connectStripe = async (userId: string) => {
       // Used when the user leaves the onboarding flow early
       // OR the onboarding link expires.
       // Stripe will redirect here so the user can restart onboarding.
-      refresh_url: `${process.env.FRONTEND_URL}/seller/connect`,
+      refresh_url: `${process.env.FRONTEND_BASE_URL}/seller/connect`,
 
       // Stripe ALWAYS redirects here after the onboarding UI finishes
       // This does NOT mean success or failure.
       // You MUST check the Stripe Account object (charges_enabled / payouts_enabled)
       // to determine onboarding status.
-      return_url: `${process.env.FRONTEND_URL}/seller/redirect`,
+      return_url: `${process.env.FRONTEND_BASE_URL}/seller/redirect`,
 
       type: 'account_onboarding',
     });
@@ -404,7 +460,6 @@ export const connectStripe = async (userId: string) => {
     throw error;
   }
 };
-
 
 export const connectedAccountStatus = async (userId: any) => {
   try {
