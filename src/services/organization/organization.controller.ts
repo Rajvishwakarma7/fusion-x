@@ -18,7 +18,7 @@ export const organizationController = {
         payload.profileImage = req.file?.path;
       }
       createOrganizationValidator.assert(payload);
-      const { code, data } = await OrganizationProvider.createOrganization(payload);
+      const { code, data }:TGenResObj = await OrganizationProvider.createOrganization(payload);
       res.status(code).json(data);
       return;
     } catch (error) {
@@ -42,7 +42,7 @@ export const organizationController = {
         delete payload.profileImage
       }
       updateOrganizationValidator.assert(payload);
-      const { code, data } = await OrganizationProvider.updateOrganization(payload);
+      const { code, data }:TGenResObj = await OrganizationProvider.updateOrganization(payload);
       res.status(code).json(data);
       return;
     } catch (error) {
