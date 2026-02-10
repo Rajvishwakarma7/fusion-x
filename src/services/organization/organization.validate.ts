@@ -3,7 +3,7 @@ import { type } from "arktype";
 export const createOrganizationValidator = type({
   userId: "string",
   organizationName: "string",
-  profileImage: "string",
+  "profileImage?": "string",
   address: "string",
   zipCode: "string",
   phone: "string",

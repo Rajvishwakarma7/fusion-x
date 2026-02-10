@@ -1,6 +1,9 @@
 import Organization from '../../models/organization.model.js';
 import users from '../../models/user.model.js';
-import { upload } from '../../utils/cloudinary.util.js';
+import {
+  removeImageFromCloudinary,
+  upload,
+} from '../../utils/cloudinary.util.js';
 import { deleteLocalFile } from '../../utils/common.util.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
@@ -30,7 +33,7 @@ export const createOrganization = async (payload: createOrganizationType) => {
       return GenResObj(
         Code.NOT_FOUND,
         false,
-        'User not found or profile already completed'
+        `${checkAvlUser ? 'Profile already completed' : 'User not found'}`
       );
     }
 
@@ -98,6 +101,10 @@ export const updateOrganization = async (payload: updateOrganizationType) => {
     if (profileImage) {
       const { uploadedImageUrl, publicId } = await upload(profileImage);
       updateData.profileImage = uploadedImageUrl;
+
+      if (organization.profileImage) {
+        removeImageFromCloudinary(organization.profileImage);
+      }
     }
 
     const org = await Organization.findByIdAndUpdate(

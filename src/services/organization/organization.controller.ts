@@ -13,8 +13,10 @@ export const organizationController = {
       const payload = {
         userId: req.userData?.userId,
         ...req.body,
-        profileImage: req.file?.path,
       };
+      if(req.file){
+        payload.profileImage = req.file?.path;
+      }
       createOrganizationValidator.assert(payload);
       const { code, data } = await OrganizationProvider.createOrganization(payload);
       res.status(code).json(data);
