@@ -12,4 +12,9 @@ router
   .route('/create-organization')
   .post(upload.single('profileImage'),OrganizationController.createOrganization);
 
+router
+  .route('/update-organization')
+  .put(upload.single('profileImage'),OrganizationController.updateOrganization);
+
+
 export default router;

@@ -13,5 +13,16 @@ export const createOrganizationValidator = type({
 
 export type createOrganizationType = typeof createOrganizationValidator.infer
 
+export const updateOrganizationValidator = type({
+  organizationId: "string",
+  organizationName: "string",
+  "profileImage?": "string",
+  address: "string",
+  zipCode: "string",
+  phone: "string",
+  location: "string",
+  
+})
 
+export type updateOrganizationType = typeof updateOrganizationValidator.infer
 
