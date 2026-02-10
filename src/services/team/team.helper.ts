@@ -1,40 +1,24 @@
-import { stripe } from "../../config/stripe.config";
-import users from "../../models/user.model";
+import TeamMedia from '../../models/teamMedia.model';
+import { upload } from '../../utils/cloudinary.util';
 
-
-export const getStripeCustomerId = async (userId: string): Promise<string> => {
+export const uploadMedia = async (fileItem: any[], teamId: string) => {
   try {
-    const user = await users.findById(userId).lean();
+    const uploadPromises = fileItem.map(async (file: any) => {
+      const url = await upload(file.path);
 
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
-    }
-    if (user.stripeCustomerId) {
-      return user.stripeCustomerId;
-    }
-
-    const stripeCustomer = await stripe.customers.create({
-      email: user?.email || undefined,
-      metadata: {
-        userId,
-      },
+      return TeamMedia.create({
+        teamId,
+        url: url.uploadedImageUrl,
+        size: file.size,
+        mimeType: file.mimetype,
+        type: file.mimetype.includes('image') ? 'image' : 'video',
+      });
     });
 
-    await users.findOneAndUpdate(
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      {_id:userId},
-      {
-        $set: {
-          stripeCustomerId: stripeCustomer.id,
-        },
-      },
-      {new:true},
-    );
-
-    return stripeCustomer.id;
-
+    await Promise.all(uploadPromises);
   } catch (error) {
-    console.log('error in getStripeCustomerId :>> ', error);
+    console.log('error in uploadMedia :>> ', error);
     throw error;
   }
 };
+

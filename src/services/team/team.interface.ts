@@ -1,11 +1,13 @@
+import type { Document, SchemaTimestampsConfig } from "mongoose";
 import { Types } from "mongoose";
-
-export type TStripeConnectModel = {
+export type TTeam = {
   organizationId: Types.ObjectId;
-  teamId: Types.ObjectId;
-  stripeAccountId: string;
-  isActive: boolean;
-  chargesEnabled: { type: Boolean; default: false };
-  payoutsEnabled: { type: Boolean; default: false };
-  detailsSubmitted: { type: Boolean; default: false };
+  teamName: string;
+  ourStory: string;
+  profileImage: string;
+  coverImage: string;
+  teamGoals: string[];
+  achievement: string;
 };
+
+export type TTeamModel = TTeam & Document & SchemaTimestampsConfig;

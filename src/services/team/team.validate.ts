@@ -1,46 +1,18 @@
 import { type } from "arktype";
+import { multerFile } from "../../utils/commonInterface.utils";
 
 
-export const createPlanValidator = type({
+export const createTeamValidator = type({
   userId: "string",
-  priceId: "string",
+  teamName: "string",
+  ourStory: "string",
+  teamGoals: "string[]",
+  achievement: "string",
+  profileImage: multerFile.array(),
+  coverImage: multerFile.array(),
+  teamPhotos: multerFile.array(),
+  teamVideos: multerFile.array(),
 })
 
-export type createPlanType = typeof createPlanValidator.infer
-
-export const cancelPlanValidator = type({
-  userId: "string",
-})
-
-export type cancelPlanType = typeof cancelPlanValidator.infer
-
-export  const  upgradeSubscriptionValidator = type({
-  userId: "string",
-  priceId: "string",
-})
-
-export type upgradeSubscriptionType = typeof upgradeSubscriptionValidator.infer
-
-export const userTransactionsHistoryValidator = type({
-  userId: "string",
-  page: "number",
-  pageSize: "number",
-  status: "string?",
-})
-
-export type userTransactionsHistoryType = typeof userTransactionsHistoryValidator.infer
-
-export const getUserMembershipValidator = type({
-  userId: "string",
-})
-
-export type getUserMembershipType = typeof getUserMembershipValidator.infer
-
-export const stripeConnectValidator = type({
-  userId: "string",
-});
-
-export type stripeConnectValidatorType = typeof stripeConnectValidator.infer;
-
-
+export type createTeamType = typeof createTeamValidator.infer
 

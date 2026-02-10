@@ -1,7 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
+import { TTeamModel } from '../services/team/team.interface';
 
-const teamSchema = new Schema(
+const teamSchema = new Schema<TTeamModel>(
   {
+
     organizationId: {
       type: Schema.Types.ObjectId,
       ref: 'organizations',
@@ -11,20 +13,16 @@ const teamSchema = new Schema(
       type: String,
       required: true,
     },
-    about: {
+    ourStory: {
       type: String,
     },
     profileImage: {
-      type: Schema.Types.ObjectId,
-      ref: '',
-    },
-    coverImage: {
-      type: Schema.Types.ObjectId,
-      ref: '',
-    },
-    goal: {
       type: String,
     },
+    coverImage: {
+      type: String,
+    },
+    teamGoals: { type: [String], default: [] },
     achievement: {
       type: String,
     },
@@ -35,6 +33,6 @@ const teamSchema = new Schema(
   }
 );
 
-const Team = mongoose.model('teams', teamSchema);
+const Team = mongoose.model<TTeamModel>('teams', teamSchema);
 
 export default Team;

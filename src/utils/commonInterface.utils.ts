@@ -1,3 +1,4 @@
+import { type } from "arktype";
 import { Schema } from "mongoose";
 
 export type TResponse = {
@@ -36,3 +37,15 @@ export interface Token {
 }
 
 export type MongooseId = string | Schema.Types.ObjectId;
+
+
+export const multerFile = type({
+  fieldname: "string",
+  originalname: "string",
+  "encoding?": "string",
+  mimetype: "string",
+  size: "number",
+  "destination?": "string",
+  filename: "string",
+  path: "string?",
+});

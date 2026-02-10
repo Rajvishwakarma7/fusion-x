@@ -22,7 +22,7 @@ export const organizationController = {
       res.status(code).json(data);
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from create organization:>> ', error);
       next(error);
     }
   },
@@ -33,7 +33,6 @@ export const organizationController = {
   ) => {
     try {
       const payload = {
-        userId: req.userData?.userId,
         ...req.body,
       };
       if(req.file){
@@ -46,7 +45,7 @@ export const organizationController = {
       res.status(code).json(data);
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from update organization:>> ', error);
       next(error);
     }
   },

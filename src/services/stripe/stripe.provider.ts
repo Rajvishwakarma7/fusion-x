@@ -386,7 +386,7 @@ export const connectStripe = async (payload: stripeConnectValidatorType) => {
       );
     }
 
-    const org = await Organization.findOne({ userId }).lean();
+    const org = await Organization.findOne({ userId , isDeleted: false}).lean();
     if (!org) {
       return GenResObj(Code.BAD_REQUEST, false, 'Organization not found');
     }

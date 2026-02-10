@@ -27,6 +27,8 @@ const organizationSchema = new Schema(
     location: {
       type: String,
     },
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     strict: true,

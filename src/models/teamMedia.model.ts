@@ -10,7 +10,7 @@ const teamMediaSchema = new Schema(
     url: { type: String, required: true },
     size: { type: Number },
     mimeType: { type: String },
-    type:{ type: String },
+    type: { type: String, enum: ['image', 'video'], default: 'image' },
   },
   {
     strict: true,
