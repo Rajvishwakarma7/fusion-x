@@ -55,3 +55,16 @@ export const getTeamMediaValidator = type({
 });
 
 export type getTeamMediaType = typeof getTeamMediaValidator.infer;
+
+export const updateTeamValidator = type({
+  userId: 'string',
+  teamId: 'string',
+  teamName: 'string',
+  ourStory: 'string',
+  teamGoals: 'string[]',
+  achievement: 'string',
+  "profileImage?": multerFile.array(),
+  "coverImage?": multerFile.array()
+})
+
+export type updateTeamType = typeof updateTeamValidator.infer

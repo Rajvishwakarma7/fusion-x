@@ -18,9 +18,11 @@ const teamSchema = new Schema<TTeamModel>(
     },
     profileImage: {
       type: String,
+      default: null,
     },
     coverImage: {
       type: String,
+      default: null,
     },
     teamGoals: { type: [String], default: [] },
     achievement: {

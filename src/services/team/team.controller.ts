@@ -7,6 +7,7 @@ import {
   getAllTeamsValidator,
   getTeamMediaValidator,
   updateTeamMediaValidator,
+  updateTeamValidator,
   uploadTeamMediaValidator,
 } from './team.validate';
 
@@ -112,6 +113,48 @@ export const teamController = {
       createTeamValidator.assert(payload);
 
       const { code, data }: TGenResObj = await TeamProvider.createTeam(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is comming from create team:>> ', error);
+      next(error);
+    }
+  },
+
+  updateTeam: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const files = req.files as any;
+
+      const payload = {
+        userId: req.userData?.userId,
+        ...req.body,
+      };
+
+      if (payload.teamGoals) {
+        if (typeof payload.teamGoals === 'string') {
+          payload.teamGoals = [payload.teamGoals];
+        } else {
+          payload.teamGoals = payload.teamGoals;
+        }
+      }
+
+      if (files?.profileImage) {
+        payload.profileImage = files?.profileImage;
+      } else {
+        delete payload.profileImage;
+      }
+
+      if (files?.coverImage) {
+        payload.coverImage = files?.coverImage;
+      } else {
+        delete payload.coverImage;
+      }
+
+      updateTeamValidator.assert(payload);
+
+      const { code, data }: TGenResObj = await TeamProvider.updateTeam(payload);
 
       res.status(code).json(data);
 

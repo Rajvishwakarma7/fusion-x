@@ -31,6 +31,15 @@ router.route('/create-team').post(
   TeamController.createTeam
 );
 
+router.route('/update-team').post(
+  authCheck([UserRoles.ORGANIZATION]),
+  upload.fields([
+    { name: 'profileImage', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 },
+  ]),
+  TeamController.updateTeam
+);
+
 
 
 // team-media handle

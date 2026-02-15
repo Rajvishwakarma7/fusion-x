@@ -15,6 +15,7 @@ import {
   getAllTeamsType,
   getTeamMediaType,
   updateTeamMediaType,
+  updateTeamType,
   uploadTeamMediaType,
 } from './team.validate.js';
 
@@ -295,7 +296,6 @@ export const createTeamWithMedia = async (payload: createTeamType) => {
   }
 };
 
-
 export const createTeam = async (payload: createTeamType) => {
   try {
     const {
@@ -306,7 +306,6 @@ export const createTeam = async (payload: createTeamType) => {
       achievement,
       profileImage,
       coverImage,
-
     } = payload;
 
     const org = await Organization.findOne({ userId }).lean();
@@ -341,6 +340,62 @@ export const createTeam = async (payload: createTeamType) => {
     return GenResObj(Code.OK, true, 'Team created successfully', team);
   } catch (error) {
     console.log('error in createTeam :>> ', error);
+    throw error;
+  }
+};
+
+export const updateTeam = async (payload: updateTeamType) => {
+  try {
+    const {
+      userId,
+      teamId,
+      teamName,
+      ourStory,
+      teamGoals,
+      achievement,
+      profileImage,
+      coverImage,
+    } = payload;
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+      if (profileImage) {
+        deleteLocalFile(profileImage[0].path as string);
+      }
+      if (coverImage) {
+        deleteLocalFile(coverImage[0].path as string);
+      }
+
+      return GenResObj(Code.NOT_FOUND, false, 'Team not found');
+    }
+
+    const teamPayload: any = {
+      teamName,
+      ourStory,
+      teamGoals,
+      achievement,
+    };
+
+    if (profileImage && profileImage.length > 0) {
+      const profileImageUrl = await upload(profileImage[0].path);
+      teamPayload.profileImage = profileImageUrl.uploadedImageUrl;
+    }
+    if (coverImage && coverImage.length > 0) {
+      const coverImageUrl = await upload(coverImage[0].path);
+      teamPayload.coverImage = coverImageUrl.uploadedImageUrl;
+    }
+
+    const teamUpdte = await Team.findByIdAndUpdate(
+      teamId,
+      {
+        $set: teamPayload,
+      },
+      { new: true }
+    );
+
+    return GenResObj(Code.OK, true, 'Team updated successfully', teamUpdte);
+  } catch (error) {
+    console.log('error in updateTeam :>> ', error);
     throw error;
   }
 };
