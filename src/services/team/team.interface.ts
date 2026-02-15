@@ -11,3 +11,16 @@ export type TTeam = {
 };
 
 export type TTeamModel = TTeam & Document & SchemaTimestampsConfig;
+
+
+// team media 
+
+export type TTeamMedia = {
+  teamId: Types.ObjectId;
+  url: string;
+  size: number;
+  mimeType: string;
+  type: string;
+};
+
+export type TTeamMediaModel = TTeamMedia & Document & SchemaTimestampsConfig;

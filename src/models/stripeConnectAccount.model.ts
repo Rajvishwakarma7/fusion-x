@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
 import { TStripeConnectModel } from "../services/stripe/stripe.interface.js";
 
 const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
@@ -15,6 +15,6 @@ const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
   { timestamps: true }
 );
 
- const StripeConnectAccount = model("stripe_connect_accounts",stripeConnectAccountSchema);
+ const StripeConnectAccount = mongoose.model<TStripeConnectModel>("stripe_connect_accounts",stripeConnectAccountSchema);
 
 export default StripeConnectAccount;

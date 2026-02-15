@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
+import { TOrganizationModel } from '../services/organization/organization.interface';
 
-const organizationSchema = new Schema(
+const organizationSchema = new Schema<TOrganizationModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -36,6 +37,6 @@ const organizationSchema = new Schema(
   }
 );
 
-const Organization = mongoose.model('organizations', organizationSchema);
+const Organization = mongoose.model<TOrganizationModel>('organizations', organizationSchema);
 
 export default Organization;

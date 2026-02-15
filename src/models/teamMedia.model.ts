@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
+import { TTeamMediaModel } from '../services/team/team.interface';
 
-const teamMediaSchema = new Schema(
+const teamMediaSchema = new Schema<TTeamMediaModel>(
   {
     teamId: {
       type: Schema.Types.ObjectId,
@@ -18,6 +19,6 @@ const teamMediaSchema = new Schema(
   }
 );
 
-const TeamMedia = mongoose.model('team_media', teamMediaSchema);
+const TeamMedia = mongoose.model<TTeamMediaModel>('team_media', teamMediaSchema);
 
 export default TeamMedia;
