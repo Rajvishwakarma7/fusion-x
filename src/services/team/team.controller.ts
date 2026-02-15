@@ -5,6 +5,7 @@ import {
   createTeamValidator,
   deleteTeamMediaValidator,
   getAllTeamsValidator,
+  getTeamByIdValidator,
   getTeamMediaValidator,
   updateTeamMediaValidator,
   updateTeamValidator,
@@ -48,6 +49,22 @@ export const teamController = {
       return;
     } catch (error) {
       console.log('error is coming from get all teams:>> ', error);
+      next(error);
+    }
+  },
+
+  getTeamById: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const payload = {
+        teamId: req.query.teamId as string,
+      };
+      getTeamByIdValidator.assert(payload);
+      const { code, data }: TGenResObj =
+        await TeamProvider.getTeamById(payload);
+      res.status(code).json(data);
+      return;
+    } catch (error) {
+      console.log('error is coming from get team by id:>> ', error);
       next(error);
     }
   },

@@ -13,6 +13,7 @@ import {
   createTeamType,
   deleteTeamMediaType,
   getAllTeamsType,
+  getTeamByIdType,
   getTeamMediaType,
   updateTeamMediaType,
   updateTeamType,
@@ -234,6 +235,23 @@ export const getAllTeams = async (payload: getAllTeamsType) => {
     return GenResObj(Code.OK, true, 'Team created successfully', resObj);
   } catch (error) {
     console.log('error in createTeam :>> ', error);
+    throw error;
+  }
+};
+
+export const getTeamById = async (payload: getTeamByIdType) => {
+  try {
+    const { teamId } = payload;
+    const team = await Team.findById(teamId).populate('organizationId').lean();
+
+    if(!team){
+      return GenResObj(Code.NOT_FOUND, false, 'Team not found');
+    }
+
+    return GenResObj(Code.OK, true, 'Team found successfully', team);
+
+  } catch (error) {
+    console.log('error in getTeamById :>> ', error);
     throw error;
   }
 };

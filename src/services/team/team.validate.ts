@@ -9,6 +9,12 @@ export const getAllTeamsValidator = type({
 
 export type getAllTeamsType = typeof getAllTeamsValidator.infer;
 
+export const getTeamByIdValidator = type({
+  teamId:'string'
+})
+
+export type getTeamByIdType = typeof getTeamByIdValidator.infer
+
 export const createTeamValidator = type({
   userId: 'string',
   teamName: 'string',
