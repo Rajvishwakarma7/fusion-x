@@ -19,7 +19,7 @@ export const stripeWebhookPlatform = async (req: Request, res: Response) => {
       console.error(`Webhook signature verification failed: ${err.message}`);
     }
 
-    if (!event && !event.type) {
+    if (!event && !event?.type) {
       console.log("Event not found");
       res.sendStatus(400);
       return;
@@ -27,7 +27,7 @@ export const stripeWebhookPlatform = async (req: Request, res: Response) => {
 
     console.log("🚀 ~ stripeWebhook ~ event type:", event.type);
 
-    let stripeObject = event.data.object;
+    let stripeObject = event?.data?.object;
     var transactionType: string | null = null;
     var status: string | null = null;
 
