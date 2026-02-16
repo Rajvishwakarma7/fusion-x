@@ -14,7 +14,6 @@ const subscriptionSchema = new Schema(
     stripeCustomerId: { type: String },
 
     priceId: { type: String },
-    amount: { type: Number },
 
     plan: {
       type: String,

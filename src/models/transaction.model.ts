@@ -27,20 +27,24 @@ const transactionSchema = new Schema(
     },
     status: {
       type: String,
-      enum: [
-        'pending',
-        'processing',
-        'succeeded',
-        'failed',
-        'cancelled',
-        'refunded',
-      ],
+      enum: ['pending', 'succeeded', 'failed', 'cancelled', 'refunded'],
     },
     amount: {
       type: Number,
     },
     currency: {
       type: String,
+    },
+    revenue: {
+      platform: {
+        percentage: Number,
+        amount: Number,
+      },
+      organization: {
+        percentage: Number,
+        amount: Number,
+        stripeAccountId: String,
+      },
     },
     transactionId: {
       type: String,
@@ -53,7 +57,7 @@ const transactionSchema = new Schema(
     },
     invoicePdfUrl: {
       type: String,
-    }
+    },
   },
   { timestamps: true }
 );
