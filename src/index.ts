@@ -7,8 +7,12 @@ import router from './services/routes';
 import webhook from './services/webhook/webhook.route';
 import { logger } from './logger';
 import { redis } from './redis/connection.redis';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 const port = process.env.PORT || 5000;
 
 app.use('/api/v1', webhook);
@@ -31,12 +35,20 @@ app.get('/health', async (req, res) => {
   res.send(`Zinda hu bhai 😢 😎 || redis status : ${redisStatus}`);
 });
 
+io.on('connection', (socket) => {
+  console.log('User Connected');
+  console.log('socket id ----->>>>', socket.id);
+  socket.on('disconnect', () => {
+    console.log('User Disconnected');
+  });
+});
+
 app.use('/api/v1', router);
 
 DbInstance.then(async () => {
   logger.info('Database Connected 🦊');
 
-  app.listen(port, async () => {
+  httpServer.listen(port, async () => {
     logger.info(`🚀 Server is running on port 🚀: ${port}`);
   });
 }).catch((err: any) => {
