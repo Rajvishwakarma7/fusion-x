@@ -2,30 +2,46 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import { DbInstance } from './config/db.config';
-import { TTokenUser } from './utils/Enums.utils';
+import { ErrorHandlerType, TTokenUser } from './utils/Enums.utils';
 import router from './services/routes';
 import webhook from './services/webhook/webhook.route';
 import { logger } from './logger';
 import { redis } from './redis/connection.redis';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import http from 'http';
+import { Server as socketServer } from 'socket.io';
+import path from 'path';
+import {
+  errorHandler,
+  notFoundHandler,
+} from './middleware/errorHandler.middleware';
+import { apiLimiter } from './middleware/rateLimiter.middleware';
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer);
+const httpServer = http.createServer(app);
 const port = process.env.PORT || 5000;
 
+const corsOptions = {
+  origin: [process.env.FRONTEND_BASE_URL as string, 'http://localhost:3000'],
+  credentials: true,
+  exposedHeaders: ['X-Access-Token'],
+};
+export const io = new socketServer(httpServer, {
+  cors: corsOptions,
+});
+
 app.use('/api/v1', webhook);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, './public')));
+app.use(apiLimiter);
+
 app.use(
   cors({
-    origin: [process.env.FRONTEND_BASE_URL as string, 'http://localhost:3000'],
-    credentials: true,
+    ...corsOptions,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.get('/health', async (req, res) => {
   const redisStatus = await redis
@@ -35,15 +51,22 @@ app.get('/health', async (req, res) => {
   res.send(`Zinda hu bhai 😢 😎 || redis status : ${redisStatus}`);
 });
 
+io.use((socket, next) => {
+  console.log(socket.handshake.headers.auth);
+  next();
+});
+
 io.on('connection', (socket) => {
-  console.log('User Connected');
-  console.log('socket id ----->>>>', socket.id);
+  logger.info(`🟢 Socket connected: ${socket.id}`);
+
   socket.on('disconnect', () => {
-    console.log('User Disconnected');
+    logger.info(`🔴 Socket disconnected: ${socket.id}`);
   });
 });
 
 app.use('/api/v1', router);
+app.use(notFoundHandler);
+app.use(errorHandler as ErrorHandlerType);
 
 DbInstance.then(async () => {
   logger.info('Database Connected 🦊');
