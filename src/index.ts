@@ -56,9 +56,8 @@ io.use(async (socket, next) => {
   const token = socket.handshake.headers.auth as string;
   const validToken = await decodeToken(token);
 
-  console.log("🚀 ~ validToken:", validToken)
-
   if (validToken) {
+    socket.data.user = validToken;
     next();
   } else {
     logger.error('Invalid Token');
@@ -66,9 +65,9 @@ io.use(async (socket, next) => {
   }
 });
 
-
 io.on('connection', (socket) => {
   logger.info(`🟢 Socket connected: ${socket.id}`);
+  console.log('socket-id', socket.id, 'user-data', socket.data.user);
 
   socket.on('disconnect', () => {
     logger.info(`🔴 Socket disconnected: ${socket.id}`);
