@@ -22,7 +22,12 @@ const httpServer = http.createServer(app);
 const port = process.env.PORT || 5000;
 
 const corsOptions = {
-  origin: [process.env.FRONTEND_BASE_URL as string, 'http://localhost:3000'],
+  origin: [
+    process.env.FRONTEND_BASE_URL as string,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+  ],
   credentials: true,
   exposedHeaders: ['X-Access-Token'],
 };
