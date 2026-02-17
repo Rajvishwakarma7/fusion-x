@@ -5,9 +5,7 @@ export const decodeToken = async (token: string) => {
   try {
     if (!token) return false;
 
-    const jwtToken = token.startsWith('Bearer ')
-      ? token.split(' ')[1]
-      : token;
+    const jwtToken = token.startsWith('Bearer ') ? token.split(' ')[1] : token;
 
     if (!jwtToken) return false;
 
@@ -20,8 +18,8 @@ export const decodeToken = async (token: string) => {
     if (!user.isActive) return false;
 
     return {
-      userId: user._id,
-      role: user.role,
+      userId: user?._id,
+      role: user?.role,
     };
   } catch (error) {
     console.log('error comming from decodeToken:>> ', error);
