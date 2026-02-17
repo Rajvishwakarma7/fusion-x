@@ -74,6 +74,12 @@ io.on('connection', (socket) => {
   logger.info(`🟢 Socket connected: ${socket.id}`);
   console.log('socket-id', socket.id, 'user-data', socket.data.user);
 
+  socket.on('message', (message) => {
+    console.log('-------------------------->>>> socket storage',socket.data.user)
+    console.log('message |||', message);
+    io.emit('message', message);
+  })
+
   socket.on('disconnect', () => {
     logger.info(`🔴 Socket disconnected: ${socket.id}`);
   });

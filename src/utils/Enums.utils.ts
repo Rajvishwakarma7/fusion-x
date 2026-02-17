@@ -22,29 +22,15 @@ export enum HttpStatusCodes {
   ACCESS_TOKEN_EXPIRED = 440,
 }
 
-
 export enum UserStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
 }
 
-
 export enum UserRoles {
   USER = "user",
   ORGANIZATION = "organization",
   ADMIN = "admin",
-}
-
-// transaction
-export enum TransactionStatus {
-  SUCCEED = "succeed",
-  FAILED = "failed",
-  IN_COMPLETED = "inCompleted",
-}
-
-export enum TransactionType {
-  SUBSCRIPTION_CREATION = "subscriptionCreation",
-  SUBSCRIPTION_UPDATE = "subscriptionUpdate",
 }
 
 export type TTokenUser = {
