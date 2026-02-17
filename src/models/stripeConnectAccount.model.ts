@@ -1,7 +1,7 @@
 import mongoose, { Schema, Types } from 'mongoose';
-import { TStripeConnectModel } from "../services/stripe/stripe.interface.js";
+import { TStripeConnectModelType } from '../services/stripe/stripe.interface';
 
-const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
+const stripeConnectAccountSchema = new Schema<TStripeConnectModelType>(
   {
     organizationId: { type: Types.ObjectId, ref: "organizations" },
     userId: { type: Types.ObjectId, ref: "users" },
@@ -15,6 +15,6 @@ const stripeConnectAccountSchema = new Schema<TStripeConnectModel>(
   { timestamps: true }
 );
 
- const StripeConnectAccount = mongoose.model<TStripeConnectModel>("stripe_connect_accounts",stripeConnectAccountSchema);
+ const StripeConnectAccount = mongoose.model<TStripeConnectModelType>("stripe_connect_accounts",stripeConnectAccountSchema);
 
 export default StripeConnectAccount;

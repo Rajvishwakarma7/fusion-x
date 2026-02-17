@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { SchemaTimestampsConfig, Types } from "mongoose";
 
-export type TStripeConnectModel = {
+export type TStripeConnect = {
   organizationId: Types.ObjectId;
   userId: Types.ObjectId;
   stripeAccountId: string;
@@ -9,3 +9,5 @@ export type TStripeConnectModel = {
   payoutsEnabled: { type: Boolean; default: false };
   detailsSubmitted: { type: Boolean; default: false };
 };
+
+export type TStripeConnectModelType = TStripeConnect & Document & SchemaTimestampsConfig;
