@@ -1,4 +1,4 @@
-import { ArkError } from "arktype";
+import { ArkErrors } from 'arktype';
 import mongoose from "mongoose";
 
 export enum HttpStatusCodes {
@@ -55,4 +55,4 @@ export type TTokenUser = {
 export const getEnumValues = (data: Record<string, string>) =>
   Object.values(data);
 
-export type ErrorHandlerType = (error: ArkError | mongoose.Error | Error) => void;
+export type ErrorHandlerType = (error: ArkErrors | mongoose.Error | Error) => void;
