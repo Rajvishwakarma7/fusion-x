@@ -9,6 +9,8 @@ export type TUser = {
   stripeCustomerId: string;
   role: "user" | "organization" | "admin";
   profileCompleted: boolean;
+  isVerified: boolean;
+  isActive: boolean;
 };
 
 export type TUserModel = TUser & Document & SchemaTimestampsConfig;

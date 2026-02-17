@@ -15,6 +15,7 @@ import {
   notFoundHandler,
 } from './middleware/errorHandler.middleware';
 import { apiLimiter } from './middleware/rateLimiter.middleware';
+import { decodeToken } from './helper/decodeToken';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -51,10 +52,20 @@ app.get('/health', async (req, res) => {
   res.send(`Zinda hu bhai 😢 😎 || redis status : ${redisStatus}`);
 });
 
-io.use((socket, next) => {
-  console.log(socket.handshake.headers.auth);
-  next();
+io.use(async (socket, next) => {
+  const token = socket.handshake.headers.auth as string;
+  const validToken = await decodeToken(token);
+
+  console.log("🚀 ~ validToken:", validToken)
+
+  if (validToken) {
+    next();
+  } else {
+    logger.error('Invalid Token');
+    socket.disconnect();
+  }
 });
+
 
 io.on('connection', (socket) => {
   logger.info(`🟢 Socket connected: ${socket.id}`);

@@ -28,6 +28,14 @@ const userSchema = new Schema<TUserModel>(
         enum:["user","organization","admin"],
         default:"user"
     },
+    isVerified: {
+      type: Boolean,
+      default: true,
+    },
+    isActive:{
+        type:Boolean,
+        default:true
+    },
     profileCompleted: {
       type: Boolean,
       default: false,
