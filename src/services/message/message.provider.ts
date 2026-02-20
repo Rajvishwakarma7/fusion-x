@@ -1,8 +1,12 @@
 import ChatTranscript from '../../models/chatTranscript.model.js';
+import Message from '../../models/message.model.js';
 import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
-import { createChatTranscriptType } from './message.validate.js';
+import {
+  createChatTranscriptType,
+  createMessageType,
+} from './message.validate.js';
 
 export const createChatTranscript = async (
   payload: createChatTranscriptType
@@ -42,6 +46,35 @@ export const createChatTranscript = async (
     );
   } catch (error) {
     console.log('error in createChatTranscript :>> ', error);
+    throw error;
+  }
+};
+
+export const sendMessage = async (payload: createMessageType) => {
+  try {
+    const { chatTranscriptId, senderId, text } = payload;
+    const chatTranscript = await ChatTranscript.findOne({
+      _id: chatTranscriptId,
+      participants: senderId,
+    });
+
+    if (!chatTranscript) {
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'Chat transcript not found please create chat transcript first'
+      );
+    }
+
+    const newMessage = await Message.create({
+      chatTranscriptId,
+      senderId,
+      text,
+    });
+
+    return GenResObj(Code.OK, true, 'Message sent successfully', newMessage);
+  } catch (error) {
+    console.log('error in sendMessage :>> ', error);
     throw error;
   }
 };

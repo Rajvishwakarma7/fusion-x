@@ -9,3 +9,11 @@ export const chatTranscriptValidator = type({
 })
 
 export type createChatTranscriptType = typeof chatTranscriptValidator.infer
+
+export const messageValidator = type({
+  chatTranscriptId: "string",
+  senderId: "string",
+  text: "string",
+})
+
+export type createMessageType = typeof messageValidator.infer

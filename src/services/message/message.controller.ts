@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
-import { chatTranscriptValidator } from './message.validate';
+import { chatTranscriptValidator, messageValidator } from './message.validate';
 
 export const messageController = {
   createChatTranscript: async (
@@ -27,4 +27,22 @@ export const messageController = {
       next(error);
     }
   },
+  sendMessage:async( req: Request, res: Response, next: NextFunction)=>{
+    try {
+      const payload = {
+        senderId: req?.userData?.userId as string,
+        ...req.body,
+      };
+      messageValidator.assert(payload);
+
+      const { code, data }: TGenResObj = await MessageProvider.sendMessage(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from stripe list plans:>> ', error);
+      next(error);
+    }
+  }
 };

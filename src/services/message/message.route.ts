@@ -10,5 +10,6 @@ router.use(
 router
   .route('/create-chattranscript')
   .post(MessageController.createChatTranscript);
+router.route('/send-message').post(MessageController.sendMessage)
 
 export default router;

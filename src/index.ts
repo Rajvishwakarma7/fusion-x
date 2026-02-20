@@ -15,7 +15,6 @@ import {
   notFoundHandler,
 } from './middleware/errorHandler.middleware';
 import { apiLimiter } from './middleware/rateLimiter.middleware';
-import { decodeToken } from './helper/decodeToken';
 import { initSocket } from './socket/socket.connection';
 
 const app = express();

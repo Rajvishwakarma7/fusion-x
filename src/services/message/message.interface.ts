@@ -1,4 +1,4 @@
-import { SchemaTimestampsConfig } from "mongoose";
+import { SchemaTimestampsConfig, Types } from "mongoose";
 
 export type TChatTranscript = {
   type: string;
@@ -8,3 +8,13 @@ export type TChatTranscript = {
 
 
 export type TChatTranscriptModel = TChatTranscript & Document & SchemaTimestampsConfig;
+
+export type TMessage={
+  chatTranscriptId: Types.ObjectId; 
+  senderId: Types.ObjectId;
+  text: string;
+  isRead?: boolean;
+  isDeleted?: boolean;
+}
+
+export type TMessageModel = TMessage & Document & SchemaTimestampsConfig;
