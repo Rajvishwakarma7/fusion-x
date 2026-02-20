@@ -14,6 +14,10 @@ export const createChatTranscript = async (
   try {
     const { type, from, to, lastMessage } = payload;
 
+    if(from.toString() === to.toString()){
+      return GenResObj(Code.BAD_REQUEST, false, 'user IDs cannot be the same');
+    }
+
     const checFrom = await users.findById(from);
     const checkTo = await users.findById(to);
 
