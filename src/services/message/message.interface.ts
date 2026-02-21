@@ -1,8 +1,10 @@
 import { SchemaTimestampsConfig, Types } from "mongoose";
 
 export type TChatTranscript = {
-  type: string;
+  chatType: 'ONE_TO_ONE' | 'GROUP';
   participants: string[]; // Array of user IDs
+  groupName:String;
+  groupAdmin:Types.ObjectId;
   lastMessage: string;
 };
 

@@ -4,15 +4,15 @@ import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import {
-  createChatTranscriptType,
+  CreateChatTranscriptType,
   createMessageType,
 } from './message.validate.js';
 
 export const createChatTranscript = async (
-  payload: createChatTranscriptType
+  payload: CreateChatTranscriptType
 ) => {
   try {
-    const { type, from, to, lastMessage } = payload;
+    const { chatType, from, to, lastMessage } = payload;
 
     if(from.toString() === to.toString()){
       return GenResObj(Code.BAD_REQUEST, false, 'user IDs cannot be the same');
@@ -26,7 +26,7 @@ export const createChatTranscript = async (
     }
 
     const existingChatTranscript = await ChatTranscript.findOne({
-      type,
+      chatType,
       participants: { $all: [from, to] },
     });
 
@@ -37,7 +37,7 @@ export const createChatTranscript = async (
     }
 
     const newChatTranscript = await ChatTranscript.create({
-      type,
+      chatType,
       participants: [from, to],
       lastMessage,
     });

@@ -1,19 +1,18 @@
-import { type } from "arktype";
-
+import { type } from 'arktype';
 
 export const chatTranscriptValidator = type({
-  type: "string",
-  from: "string",
-  to: "string",
-  lastMessage: "string",
-})
+  chatType: '"ONE_TO_ONE" | "GROUP"',
+  from: 'string',
+  to: 'string',
+  lastMessage: 'string?',
+});
 
-export type createChatTranscriptType = typeof chatTranscriptValidator.infer
+export type CreateChatTranscriptType = typeof chatTranscriptValidator.infer;
 
 export const messageValidator = type({
-  chatTranscriptId: "string",
-  senderId: "string",
-  text: "string",
-})
+  chatTranscriptId: 'string',
+  senderId: 'string',
+  text: 'string',
+});
 
-export type createMessageType = typeof messageValidator.infer
+export type createMessageType = typeof messageValidator.infer;
