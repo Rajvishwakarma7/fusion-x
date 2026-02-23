@@ -20,3 +20,13 @@ export type TMessage={
 }
 
 export type TMessageModel = TMessage & Document & SchemaTimestampsConfig;
+
+
+export type TGroupMember ={
+  groupId: Types.ObjectId;
+  userId: Types.ObjectId;
+  status: 'active' | 'inactive';
+  joinStatus: 'requested' | 'accepted' | 'rejected' | 'pending';
+}
+
+export type TGroupMemberModel = TGroupMember & Document & SchemaTimestampsConfig;
