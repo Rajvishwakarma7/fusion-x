@@ -6,7 +6,7 @@ const groupMemberSchema = new Schema<TGroupMemberModel>(
       groupId:{type:Schema.Types.ObjectId,ref:'chat_transcripts',required:true},
       userId:{type:Schema.Types.ObjectId,ref:'users',required:true},
       status:{type:String,enum:['active','inactive'],default:'active'},
-      joinStatus:{type:String,enum:['requested','accepted','rejected','pending'],default:'pending'},
+      joinStatus:{type:String,enum:['requested','joined','left','rejected','pending'],default:'pending'},
 
     },
     { strict: true, timestamps: true }

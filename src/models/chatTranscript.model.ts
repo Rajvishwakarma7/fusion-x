@@ -8,6 +8,9 @@ const chatTranscriptSchema = new Schema<TChatTranscriptModel>(
     groupName: { type: String }, 
     groupAdmin: { type: Schema.Types.ObjectId, ref: 'User' },
     lastMessage: { type: String },
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    
   },
   { timestamps: true, strict: true }
 );

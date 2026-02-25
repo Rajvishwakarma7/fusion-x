@@ -6,6 +6,8 @@ export type TChatTranscript = {
   groupName:String;
   groupAdmin:Types.ObjectId;
   lastMessage: string;
+  isActive: boolean;
+  isDeleted: boolean;
 };
 
 
@@ -26,7 +28,7 @@ export type TGroupMember ={
   groupId: Types.ObjectId;
   userId: Types.ObjectId;
   status: 'active' | 'inactive';
-  joinStatus: 'requested' | 'accepted' | 'rejected' | 'pending';
+  joinStatus: 'requested' | 'joined' | 'left' | 'rejected' | 'pending';
 }
 
 export type TGroupMemberModel = TGroupMember & Document & SchemaTimestampsConfig;
