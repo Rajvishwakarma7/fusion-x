@@ -1,4 +1,12 @@
 import { type } from 'arktype';
+import { multerFile } from '../../utils/commonInterface.utils';
+
+
+export const uploadMessageMediaValidator = type({
+  messageMedia: multerFile.array()
+});
+
+export type UploadMessageMediaType = typeof uploadMessageMediaValidator.infer;
 
 export const chatTranscriptValidator = type({
   chatType: '"ONE_TO_ONE" | "GROUP"',
@@ -21,6 +29,7 @@ export const messageValidator = type({
   chatTranscriptId: 'string',
   senderId: 'string',
   text: 'string',
+  media: 'string[]',
 });
 
 export type createMessageType = typeof messageValidator.infer;

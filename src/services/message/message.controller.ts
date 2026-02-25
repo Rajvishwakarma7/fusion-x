@@ -1,9 +1,37 @@
 import { NextFunction, Request, Response } from 'express';
 import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
-import { chatTranscriptValidator, joinGroupValidator, messageValidator } from './message.validate';
+import {
+  chatTranscriptValidator,
+  joinGroupValidator,
+  messageValidator,
+  uploadMessageMediaValidator,
+} from './message.validate';
 
 export const messageController = {
+  uploadMessageMedia: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const files = req.files as any;
+      const payload = {messageMedia:files?.messageMedia || []};
+
+      uploadMessageMediaValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.uploadMessageMedia(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from stripe list plans:>> ', error);
+      next(error);
+    }
+  },
+
   createChatTranscript: async (
     req: Request,
     res: Response,
@@ -18,7 +46,8 @@ export const messageController = {
 
       chatTranscriptValidator.assert(payload);
 
-      const { code, data }: TGenResObj = await MessageProvider.createChatTranscript(payload);
+      const { code, data }: TGenResObj =
+        await MessageProvider.createChatTranscript(payload);
 
       res.status(code).json(data);
 
@@ -29,11 +58,7 @@ export const messageController = {
     }
   },
 
-    joinGroup: async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  joinGroup: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const payload = {
         userId: req?.userData?.userId as string,
@@ -42,7 +67,8 @@ export const messageController = {
 
       joinGroupValidator.assert(payload);
 
-      const { code, data }: TGenResObj = await MessageProvider.joinGroup(payload);
+      const { code, data }: TGenResObj =
+        await MessageProvider.joinGroup(payload);
 
       res.status(code).json(data);
 
@@ -52,8 +78,8 @@ export const messageController = {
       next(error);
     }
   },
-  
-  sendMessage:async( req: Request, res: Response, next: NextFunction)=>{
+
+  sendMessage: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const payload = {
         senderId: req?.userData?.userId as string,
@@ -61,7 +87,8 @@ export const messageController = {
       };
       messageValidator.assert(payload);
 
-      const { code, data }: TGenResObj = await MessageProvider.sendMessage(payload);
+      const { code, data }: TGenResObj =
+        await MessageProvider.sendMessage(payload);
 
       res.status(code).json(data);
 
@@ -70,5 +97,5 @@ export const messageController = {
       console.log('error is coming from stripe list plans:>> ', error);
       next(error);
     }
-  }
+  },
 };

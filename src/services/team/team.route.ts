@@ -46,8 +46,8 @@ router.route('/update-team').post(
 
 // team-media handle
 router.route('/upload-team-media').post(
+  authCheck([UserRoles.ORGANIZATION]),
   upload.fields([
-    authCheck([UserRoles.ORGANIZATION]),
     { name: 'teamPhotos', maxCount: 5 },
     { name: 'teamVideos', maxCount: 5 },
   ]),

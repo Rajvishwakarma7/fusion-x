@@ -43,3 +43,23 @@ export enum UserRoles {
   ORGANIZATION = "organization",
   ADMIN = "admin",
 }
+
+export enum SocketEvents {
+  // Presence
+  USER_ONLINE = 'user:online',
+  USER_OFFLINE = 'user:offline',
+  USER_TYPING = 'user:typing',
+  USER_STOP_TYPING = 'user:stop_typing',
+
+  // Direct messages
+  DIRECT_SEND = 'chat:direct:send',
+  DIRECT_RECEIVE = 'chat:direct:receive',
+  DIRECT_DELIVERED = 'chat:direct:delivered',
+  DIRECT_READ = 'chat:direct:read',
+
+  // Group messages
+  GROUP_SEND = 'chat:group:send',
+  GROUP_RECEIVE = 'chat:group:receive',
+  GROUP_DELIVERED = 'chat:group:delivered',
+  GROUP_READ = 'chat:group:read',
+}

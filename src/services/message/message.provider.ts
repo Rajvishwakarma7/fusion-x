@@ -1,16 +1,34 @@
 import ChatTranscript from '../../models/chatTranscript.model.js';
 import GroupMember from '../../models/groupMember.model.js';
 import Message from '../../models/message.model.js';
+import MessageMedia from '../../models/messageMedia.model.js';
 import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
+import { uploadMessageMediaHelper } from './message.helper.js';
 import {
   CreateChatTranscriptType,
   createMessageType,
   JoinGroupType,
+  UploadMessageMediaType,
 } from './message.validate.js';
 
 import mongoose from 'mongoose';
+
+export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
+  try {
+    const { messageMedia } = payload;
+    if (messageMedia.length === 0) {
+      return GenResObj(Code.BAD_REQUEST, false, 'Media is required');
+    }
+    const mediaFiles = await uploadMessageMediaHelper(messageMedia);
+    return GenResObj(Code.OK, true, 'Media uploaded successfully', mediaFiles);
+  } catch (error) {
+    sendMessage;
+    console.log('error in uploadMessageMedia :>> ', error);
+    throw error;
+  }
+};
 
 export const createChatTranscript = async (
   payload: CreateChatTranscriptType
@@ -143,7 +161,7 @@ export const joinGroup = async (payload: JoinGroupType) => {
       return GenResObj(
         Code.BAD_REQUEST,
         false,
-        `User is already a member of the group with status: ${isAlreadyParticipant.joinStatus}`
+        `User is already a member of this group with status: ${isAlreadyParticipant.joinStatus}`
       );
     }
 
@@ -163,10 +181,9 @@ export const joinGroup = async (payload: JoinGroupType) => {
 
 export const sendMessage = async (payload: createMessageType) => {
   try {
-    const { chatTranscriptId, senderId, text } = payload;
+    const { chatTranscriptId, senderId, text, media } = payload;
     const chatTranscript = await ChatTranscript.findOne({
       _id: chatTranscriptId,
-      participants: senderId,
     });
 
     if (!chatTranscript) {
@@ -183,7 +200,23 @@ export const sendMessage = async (payload: createMessageType) => {
       text,
     });
 
-    return GenResObj(Code.OK, true, 'Message sent successfully', newMessage);
+    if (media.length > 0) {
+      await MessageMedia.updateMany(
+        { _id: { $in: media } },
+        { $set: { messageId: newMessage._id } }
+      );
+    }
+    const msgMedia =
+      media.length > 0
+        ? await MessageMedia.find({ messageId: newMessage._id })
+        : [];
+        
+    let resObj = {
+      media: msgMedia,
+      ...newMessage.toObject(),
+    };
+
+    return GenResObj(Code.OK, true, 'Message sent successfully', resObj);
   } catch (error) {
     console.log('error in sendMessage :>> ', error);
     throw error;
