@@ -8,6 +8,7 @@ export type TChatTranscript = {
   lastMessage: string;
   isActive: boolean;
   isDeleted: boolean;
+  groupProfileImage: string;
 };
 
 

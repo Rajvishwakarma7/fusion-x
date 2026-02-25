@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
-import { chatTranscriptValidator, messageValidator } from './message.validate';
+import { chatTranscriptValidator, joinGroupValidator, messageValidator } from './message.validate';
 
 export const messageController = {
   createChatTranscript: async (
@@ -12,6 +12,7 @@ export const messageController = {
     try {
       const payload = {
         from: req?.userData?.userId as string,
+        groupAdmin: req?.userData?.userId as string,
         ...req.body,
       };
 
@@ -27,6 +28,31 @@ export const messageController = {
       next(error);
     }
   },
+
+    joinGroup: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        ...req.body,
+      };
+
+      joinGroupValidator.assert(payload);
+
+      const { code, data }: TGenResObj = await MessageProvider.joinGroup(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from stripe list plans:>> ', error);
+      next(error);
+    }
+  },
+  
   sendMessage:async( req: Request, res: Response, next: NextFunction)=>{
     try {
       const payload = {

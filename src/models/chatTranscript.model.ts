@@ -5,12 +5,12 @@ const chatTranscriptSchema = new Schema<TChatTranscriptModel>(
   {
     chatType: { type: String, enum: ['ONE_TO_ONE', 'GROUP'], required: true },
     participants: [{ type: Types.ObjectId, ref: 'users' }],
-    groupName: { type: String }, 
-    groupAdmin: { type: Schema.Types.ObjectId, ref: 'User' },
+    groupName: { type: String },
+    groupAdmin: { type: Schema.Types.ObjectId, ref: 'users' },
     lastMessage: { type: String },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
-    
+    groupProfileImage: { type: String },
   },
   { timestamps: true, strict: true }
 );

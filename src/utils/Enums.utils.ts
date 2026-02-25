@@ -22,16 +22,6 @@ export enum HttpStatusCodes {
   ACCESS_TOKEN_EXPIRED = 440,
 }
 
-export enum UserStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-}
-
-export enum UserRoles {
-  USER = "user",
-  ORGANIZATION = "organization",
-  ADMIN = "admin",
-}
 
 export type TTokenUser = {
   userId: string ;
@@ -42,3 +32,14 @@ export const getEnumValues = (data: Record<string, string>) =>
   Object.values(data);
 
 export type ErrorHandlerType = (error: ArkErrors | mongoose.Error | Error) => void;
+
+export enum UserStatus {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+}
+
+export enum UserRoles {
+  USER = "user",
+  ORGANIZATION = "organization",
+  ADMIN = "admin",
+}
