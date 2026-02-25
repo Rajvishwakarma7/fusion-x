@@ -8,26 +8,43 @@ import {
   createMessageType,
 } from './message.validate.js';
 
+import mongoose from 'mongoose';
+
 export const createChatTranscript = async (
   payload: CreateChatTranscriptType
 ) => {
   try {
     const { chatType, from, to, lastMessage } = payload;
 
-    if(from.toString() === to.toString()){
-      return GenResObj(Code.BAD_REQUEST, false, 'user IDs cannot be the same');
+    const fromId = new mongoose.Types.ObjectId(from);
+    const toId = new mongoose.Types.ObjectId(to);
+
+    if (fromId.equals(toId)) {
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'User IDs cannot be the same'
+      );
     }
 
-    const checFrom = await users.findById(from);
-    const checkTo = await users.findById(to);
+    const [checkFrom, checkTo] = await Promise.all([
+      users.findById(fromId),
+      users.findById(toId),
+    ]);
 
-    if (!checFrom || !checkTo) {
-      return GenResObj(Code.BAD_REQUEST, false, 'Invalid user IDs provided');
+    if (!checkFrom || !checkTo) {
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'Invalid user IDs provided'
+      );
     }
-
+  
+    // 🔒 Prevent duplicate ONE_TO_ONE chats
     const existingChatTranscript = await ChatTranscript.findOne({
-      chatType,
-      participants: { $all: [from, to] },
+      chatType: 'ONE_TO_ONE',
+      participants: { $all: [fromId, toId] },
+      isDeleted: false,
     });
 
     if (existingChatTranscript) {
@@ -38,7 +55,7 @@ export const createChatTranscript = async (
 
     const newChatTranscript = await ChatTranscript.create({
       chatType,
-      participants: [from, to],
+      participants: [fromId, toId],
       lastMessage,
     });
 
