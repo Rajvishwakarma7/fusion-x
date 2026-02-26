@@ -2,10 +2,10 @@ import { SchemaTimestampsConfig, Types } from "mongoose";
 
 export type TChatTranscript = {
   chatType: 'ONE_TO_ONE' | 'GROUP';
-  participants: Types.ObjectId[]; // Array of user IDs
   groupName:String;
   groupAdmin:Types.ObjectId;
   lastMessage: string;
+  lastMessageAt: Date;
   isActive: boolean;
   isDeleted: boolean;
   groupProfileImage: string;
@@ -18,18 +18,22 @@ export type TMessage={
   chatTranscriptId: Types.ObjectId; 
   senderId: Types.ObjectId;
   text: string;
-  isRead?: boolean;
   isDeleted?: boolean;
 }
 
 export type TMessageModel = TMessage & Document & SchemaTimestampsConfig;
 
 
-export type TGroupMember ={
-  groupId: Types.ObjectId;
+export type TChatParticipants ={
+  chatTranscriptId: Types.ObjectId;
   userId: Types.ObjectId;
+  chatType: 'ONE_TO_ONE' | 'GROUP';
   status: 'active' | 'inactive';
+  unreadCount: number;
+  lastReadAt: Date;
+  joinedAt: Date;
+  isDeleted: boolean;
   joinStatus: 'requested' | 'joined' | 'left' | 'rejected' | 'pending';
 }
 
-export type TGroupMemberModel = TGroupMember & Document & SchemaTimestampsConfig;
+export type TChatParticipantsModel = TChatParticipants & Document & SchemaTimestampsConfig;

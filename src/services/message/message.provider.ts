@@ -1,5 +1,5 @@
 import ChatTranscript from '../../models/chatTranscript.model.js';
-import GroupMember from '../../models/groupMember.model.js';
+import GroupMember from '../../models/chatParticipants.model.js';
 import Message from '../../models/message.model.js';
 import MessageMedia from '../../models/messageMedia.model.js';
 import users from '../../models/user.model.js';
@@ -10,10 +10,12 @@ import {
   CreateChatTranscriptType,
   createMessageType,
   JoinGroupType,
+  OneToOneValidatorType,
   UploadMessageMediaType,
 } from './message.validate.js';
 
 import mongoose from 'mongoose';
+import ChatParticipants from '../../models/chatParticipants.model.js';
 
 export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
   try {
@@ -34,7 +36,7 @@ export const createChatTranscript = async (
   payload: CreateChatTranscriptType
 ) => {
   try {
-    const { chatType, from, to, lastMessage, groupName, groupAdmin } = payload;
+    const { chatType, from, to, lastMessage, groupName } = payload;
 
     if (chatType === 'ONE_TO_ONE') {
       if (!from || !to) {
@@ -65,24 +67,55 @@ export const createChatTranscript = async (
         return GenResObj(Code.BAD_REQUEST, false, 'Invalid user IDs provided');
       }
 
-      // 🔒 Prevent duplicate ONE_TO_ONE chats
-      const existingChatTranscript = await ChatTranscript.findOne({
-        chatType: 'ONE_TO_ONE',
-        participants: { $all: [fromId, toId] },
-        isDeleted: false,
-      });
+      const chatTranscriptParticipantsAvl = await ChatParticipants.aggregate([
+        {
+          $match: {
+            chatType: 'ONE_TO_ONE',
+            userId: { $in: [fromId, toId] },
+            isDeleted: false,
+          },
+        },
+        {
+          $group: {
+            _id: '$chatTranscriptId',
+            participants: { $addToSet: '$userId' },
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $eq: [{ $size: '$participants' }, 2],
+            },
+          },
+        },
+      ]);
 
-      if (existingChatTranscript) {
+      if (chatTranscriptParticipantsAvl.length > 0) {
+        const chatTranscriptId = chatTranscriptParticipantsAvl[0]._id;
         return GenResObj(Code.OK, true, 'Chat transcript already exists', {
-          chatTranscriptId: existingChatTranscript._id,
+          chatTranscriptId,
         });
       }
 
       const newChatTranscript = await ChatTranscript.create({
         chatType,
-        participants: [fromId, toId],
         lastMessage,
       });
+
+      await Promise.all([
+        ChatParticipants.create({
+          chatTranscriptId: newChatTranscript._id,
+          chatType,
+          userId: fromId,
+          joinStatus: 'joined',
+        }),
+        ChatParticipants.create({
+          chatTranscriptId: newChatTranscript._id,
+          chatType,
+          userId: toId,
+          joinStatus: 'joined',
+        }),
+      ]);
 
       return GenResObj(
         Code.OK,
@@ -91,30 +124,39 @@ export const createChatTranscript = async (
         newChatTranscript
       );
     } else if (chatType === 'GROUP') {
-      if (!groupAdmin) {
+      if (!from) {
         return GenResObj(
           Code.BAD_REQUEST,
           false,
           '"groupAdmin" user ID is required for GROUP chat'
         );
       }
+      const fromId = new mongoose.Types.ObjectId(from);
+
+      const checkFrom = await users.findById(fromId);
+
+      if (!checkFrom) {
+        return GenResObj(
+          Code.BAD_REQUEST,
+          false,
+          'Invalid "groupAdmin" user ID provided'
+        );
+      }
 
       const createGroup = await ChatTranscript.create({
         chatType,
-        participants: [],
         groupName: groupName || 'Unnamed Group',
-        groupAdmin: new mongoose.Types.ObjectId(groupAdmin),
+        groupAdmin: fromId,
         lastMessage,
       });
 
       // Automatically add the group creator as a member of the group
       await GroupMember.create({
-        groupId: createGroup._id,
-        userId: new mongoose.Types.ObjectId(groupAdmin),
-        status: 'active',
+        chatTranscriptId: createGroup._id,
+        userId: fromId,
         joinStatus: 'joined',
+        chatType,
       });
-
       return GenResObj(
         Code.OK,
         true,
@@ -152,10 +194,10 @@ export const joinGroup = async (payload: JoinGroupType) => {
       );
     }
 
-    const isAlreadyParticipant = await GroupMember.findOne({
-      groupId: chatTranscriptId,
+    const isAlreadyParticipant = await ChatParticipants.findOne({
+      chatTranscriptId,
       userId,
-      status: 'active',
+      chatType: 'GROUP',
     });
     if (isAlreadyParticipant) {
       return GenResObj(
@@ -165,11 +207,11 @@ export const joinGroup = async (payload: JoinGroupType) => {
       );
     }
 
-    await GroupMember.create({
-      groupId: chatTranscriptId,
+    await ChatParticipants.create({
+      chatTranscriptId,
       userId,
-      status: 'active',
       joinStatus: 'joined',
+      chatType: 'GROUP',
     });
 
     return GenResObj(Code.OK, true, 'Group joined successfully');
@@ -200,17 +242,17 @@ export const sendMessage = async (payload: createMessageType) => {
       text,
     });
 
-    if (media.length > 0) {
+    if (media && media.length > 0) {
       await MessageMedia.updateMany(
         { _id: { $in: media } },
         { $set: { messageId: newMessage._id } }
       );
     }
     const msgMedia =
-      media.length > 0
+      media && media.length > 0
         ? await MessageMedia.find({ messageId: newMessage._id })
         : [];
-        
+
     let resObj = {
       media: msgMedia,
       ...newMessage.toObject(),
@@ -219,6 +261,33 @@ export const sendMessage = async (payload: createMessageType) => {
     return GenResObj(Code.OK, true, 'Message sent successfully', resObj);
   } catch (error) {
     console.log('error in sendMessage :>> ', error);
+    throw error;
+  }
+};
+
+export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
+  try {
+    const { userId, page, pageSize, search } = payload;
+
+    const chatTranscriptData = await ChatTranscript.aggregate([
+      {
+        $match: {
+          chatType: 'ONE_TO_ONE',
+          participants: new mongoose.Types.ObjectId(userId),
+          isDeleted: false,
+          isActive: true,
+        },
+      },
+    ]);
+
+    return GenResObj(
+      Code.OK,
+      true,
+      'One to one chats-list fetched successfully',
+      chatTranscriptData
+    );
+  } catch (error) {
+    console.log('error in getOneToOneChats :>> ', error);
     throw error;
   }
 };

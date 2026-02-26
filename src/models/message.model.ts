@@ -7,11 +7,11 @@ const messageSchema = new Schema<TMessageModel>(
         chatTranscriptId: { type: Types.ObjectId, ref: 'chat_transcripts' },
         senderId:{type:Types.ObjectId,ref:'users'},
         text:{type:String},
-        isRead:{type:Boolean,default:false},
         isDeleted:{type:Boolean,default:false},
     },
     { timestamps: true, strict: true }
 )
+messageSchema.index({ chatTranscriptId: 1, createdAt: -1 });
 
 const Message =  mongoose.model<TMessageModel>('messages', messageSchema);
 

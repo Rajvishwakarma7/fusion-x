@@ -1,114 +1,119 @@
-import { decodeToken } from '../helper/decodeToken';
-import { logger } from '../logger';
-import { Server, Socket } from 'socket.io';
-import { sendMessage } from '../services/message/message.provider';
-import ChatTranscript from '../models/chatTranscript.model';
-import GroupMember from '../models/groupMember.model';
-import mongoose, { Types } from 'mongoose';
-import { TGenResObj } from '../utils/commonInterface.utils';
-import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
+  import { decodeToken } from '../helper/decodeToken';
+  import { logger } from '../logger';
+  import { Server, Socket } from 'socket.io';
+  import { sendMessage } from '../services/message/message.provider';
+  import ChatTranscript from '../models/chatTranscript.model';
+  import GroupMember from '../models/chatParticipants.model';
+  import mongoose from 'mongoose';
+  import { TGenResObj } from '../utils/commonInterface.utils';
+  import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
+  import ChatParticipants from '../models/chatParticipants.model';
 
-const onlineUsers = new Map();
+  const onlineUsers = new Map();
 
-const initSocket = (io: Server) => {
-  try {
-    // socket authentication middleware ------------
-    io.use(async (socket, next) => {
-      const token = socket.handshake.headers.auth as string;
-      const validToken = await decodeToken(token);
+  const initSocket = (io: Server) => {
+    try {
+      // socket authentication middleware ------------
+      io.use(async (socket, next) => {
+        const token = socket.handshake.headers.auth as string;
+        const validToken = await decodeToken(token);
 
-      if (validToken) {
-        socket.data.user = validToken;
-        next();
-      } else {
-        logger.error('Invalid Token');
-        socket.disconnect(true);
-      }
-    });
-
-    // socket connection event  ---------------
-    io.on('connection', async (socket: Socket) => {
-      const userId = socket.data.user.userId.toString();
-
-      logger.info(`🟢 Connected: ${userId} | socket: ${socket.id}`);
-
-      onlineUsers.set(userId, socket.id);
-
-      // join rooms  ----
-      await joinUserRooms(socket, userId);
-
-      // event handlers ----
-      handleSocketEvents(socket, userId);
-
-      // disconnection ----
-      socket.on('disconnect', () => {
-        logger.info(`🔴 Disconnected: ${userId} | socket: ${socket.id}`);
-        delete socket.data.user.userId;
-        onlineUsers.delete(userId);
+        if (validToken) {
+          socket.data.user = validToken;
+          next();
+        } else {
+          logger.error('Invalid Token');
+          socket.disconnect(true);
+        }
       });
-    });
-  } catch (error) {
-    console.error('Error initializing socket:', error);
-    throw error;
+
+      // socket connection event  ---------------
+      io.on('connection', async (socket: Socket) => {
+        const userId = socket.data.user.userId.toString();
+
+        logger.info(`🟢 Connected: ${userId} | socket: ${socket.id}`);
+
+        onlineUsers.set(userId, socket.id);
+
+        // join rooms  ----
+        await joinUserRooms(socket, userId);
+
+        // event handlers ----
+        handleSocketEvents(socket, userId);
+
+        // disconnection ----
+        socket.on('disconnect', () => {
+          logger.info(`🔴 Disconnected: ${userId} | socket: ${socket.id}`);
+          delete socket.data.user.userId;
+          onlineUsers.delete(userId);
+        });
+      });
+    } catch (error) {
+      console.error('Error initializing socket:', error);
+      throw error;
+    }
+  };
+
+  // join rooom
+  async function joinUserRooms(socket: Socket, userId: string) {
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    console.log('userObjectId', userObjectId);
+
+    const allChats = await ChatParticipants.find({
+      userId: userObjectId,
+      status: 'active',
+      isDeleted: false,
+      joinStatus: 'joined',
+    }).select('chatTranscriptId');
+
+    console.log('allChats', allChats);
+
+    allChats.forEach((c) => socket.join(c.chatTranscriptId.toString()));
   }
-};
 
-// join rooom
-async function joinUserRooms(socket: Socket, userId: string) {
-  const userObjectId = new mongoose.Types.ObjectId(userId);
+  // socket receive events ----------------
+  function handleSocketEvents(socket: Socket, userId: string) {
+    try {
+      // group messaging
+      socket.on(SocketEvents.GROUP_SEND, async (payload) => {
+        try {
+          payload.senderId = userId;
+          const { code, data }: TGenResObj = await sendMessage(payload);
+        console.log('data',data);
+        console.log('code',code);
 
-  const chats = await ChatTranscript.find({
-    chatType: 'ONE_TO_ONE',
-    participants: userObjectId,
-  }).select('_id');
 
-  const groups = await GroupMember.find({
-    userId: userObjectId,
-    status: 'active',
-    joinStatus: 'joined',
-  }).select('groupId');
-
-  chats.forEach((c) => socket.join(c._id.toString()));
-  groups.forEach((g) => socket.join(g.groupId.toString()));
-}
-
-// socket receive events ----------------
-function handleSocketEvents(socket: Socket, userId: string) {
-  try {
-    // group messaging
-    socket.on(SocketEvents.GROUP_SEND, async (payload) => {
-      try {
-        payload.senderId = userId;
-        const { code, data }: TGenResObj = await sendMessage(payload);
-
-        if (code === Code.OK) {
-          socket
-            .to(payload.chatTranscriptId)
-            .emit(SocketEvents.GROUP_RECEIVE, data?.data);
+          if (code === Code.OK) {
+            socket
+              .to(payload.chatTranscriptId)
+              .emit(SocketEvents.GROUP_RECEIVE, data?.data);
+          }
+        } catch (error) {
+          console.error('Error in chat:group:send event:', error);
         }
-      } catch (error) {
-        console.error('Error in chat:group:send event:', error);
-      }
-    });
+      });
 
-    // direct messaging
-    socket.on(SocketEvents.DIRECT_SEND, async (payload) => {
-      try {
-        payload.senderId = userId;
-        const { code, data }: TGenResObj = await sendMessage(payload);
-        if (code === Code.OK) {
-          socket
-            .to(payload.chatTranscriptId)
-            .emit(SocketEvents.DIRECT_RECEIVE, data?.data);
+      // direct messaging
+      socket.on(SocketEvents.DIRECT_SEND, async (payload) => {
+        try {
+          payload.senderId = userId;
+          const { code, data }: TGenResObj = await sendMessage(payload);
+            console.log('data',data);
+        console.log('code',code);
+          if (code === Code.OK) {
+            socket
+              .to(payload.chatTranscriptId)
+              .emit(SocketEvents.DIRECT_RECEIVE, data?.data);
+          }
+        } catch (error) {
+          console.log('Error in chat:direct:send event:', error);
         }
-      } catch (error) {
-        console.log('Error in chat:direct:send event:', error);
-      }
-    });
-  } catch (error) {
-    console.error('Error handling socket receive events:', error);
-    throw error;
+      });
+    } catch (error) {
+      console.error('Error handling socket receive events:', error);
+      throw error;
+    }
   }
-}
 
-export { initSocket, onlineUsers };
+  export { initSocket, onlineUsers };

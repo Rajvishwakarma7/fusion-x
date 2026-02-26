@@ -5,6 +5,7 @@ import {
   chatTranscriptValidator,
   joinGroupValidator,
   messageValidator,
+  oneToOneValidator,
   uploadMessageMediaValidator,
 } from './message.validate';
 
@@ -40,7 +41,6 @@ export const messageController = {
     try {
       const payload = {
         from: req?.userData?.userId as string,
-        groupAdmin: req?.userData?.userId as string,
         ...req.body,
       };
 
@@ -98,4 +98,29 @@ export const messageController = {
       next(error);
     }
   },
+
+   getOneToOneChats: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const payload = {
+       userId: req?.userData?.userId as string,
+        ...req.query,
+        page: Number(req.query.page) || 1,
+        pageSize: Number(req.query.pageSize) || 10,
+      };
+      oneToOneValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.getOneToOneChats(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from stripe list plans:>> ', error);
+      next(error);
+    }
+  },
+
+
+  
 };

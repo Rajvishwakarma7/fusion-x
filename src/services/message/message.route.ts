@@ -9,21 +9,19 @@ router.use(
   authCheck([UserRoles.ORGANIZATION, UserRoles.USER, UserRoles.ADMIN])
 );
 
-// handle msg media
+// handle-messaging 
 router
   .route('/upload-message-media')
   .post(
     upload.fields([{ name: 'messageMedia', maxCount: 5 }]),
     MessageController.uploadMessageMedia
   );
-
-// for single/group chat creation
-router
-  .route('/create-chattranscript')
-  .post(MessageController.createChatTranscript);
-
+router.route('/create-chattranscript').post(MessageController.createChatTranscript);
 router.route('/join-group').post(MessageController.joinGroup);
-
 router.route('/send-message').post(MessageController.sendMessage);
+
+// manage chats list
+router.get('/one-to-one', MessageController.getOneToOneChats);
+// router.get('/groups', MessageController.getGroupChats);
 
 export default router;
