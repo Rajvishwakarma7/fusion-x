@@ -21,7 +21,8 @@ router.route('/join-group').post(MessageController.joinGroup);
 router.route('/send-message').post(MessageController.sendMessage);
 
 // manage chats list
-router.get('/chat-list/one-to-one', MessageController.getOneToOneChats);
-// router.get('/chat-list/groups', MessageController.getGroupChats);
+router.get('/chat-list/one-to-one', MessageController.getOneToOneChatsList);
+router.get('/chat-list/my-groups', MessageController.getMyGroupChatsList);
+router.get('/chat-list/others-groups', MessageController.getOtherGroupChatsList);
 
 export default router;

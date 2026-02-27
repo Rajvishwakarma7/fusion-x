@@ -6,6 +6,7 @@ export type TChatTranscript = {
   groupAdmin:Types.ObjectId;
   lastMessage: string;
   lastMessageAt: Date;
+  lastMessageSendBy: Types.ObjectId;
   isActive: boolean;
   isDeleted: boolean;
   groupProfileImage: string;

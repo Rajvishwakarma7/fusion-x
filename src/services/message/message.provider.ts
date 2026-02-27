@@ -9,14 +9,14 @@ import { uploadMessageMediaHelper } from './message.helper.js';
 import {
   CreateChatTranscriptType,
   createMessageType,
+  GroupListValidatorType,
   JoinGroupType,
-  OneToOneValidatorType,
+  OneToOneListValidatorType,
   UploadMessageMediaType,
 } from './message.validate.js';
 
 import mongoose from 'mongoose';
 import ChatParticipants from '../../models/chatParticipants.model.js';
-import { lstat } from 'fs';
 
 export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
   try {
@@ -237,6 +237,23 @@ export const sendMessage = async (payload: createMessageType) => {
       );
     }
 
+    // check user join status
+    const userJoinStatus = await ChatParticipants.findOne({
+      chatTranscriptId,
+      userId: senderId,
+      status: 'active',
+      isDeleted: false,
+      joinStatus: 'joined',
+    });
+
+    if (!userJoinStatus) {
+      return GenResObj(
+        Code.BAD_REQUEST,
+        false,
+        'User is not a member of this chat transcript or inactive or deleted'
+      );
+    }
+
     const newMessage = await Message.create({
       chatTranscriptId,
       senderId,
@@ -266,10 +283,11 @@ export const sendMessage = async (payload: createMessageType) => {
       {
         lastMessage: text ? text : 'media',
         lastMessageAt: new Date(),
+        lastMessageSendBy: senderId,
       }
     );
 
-    await ChatParticipants.updateOne(
+    await ChatParticipants.updateMany(
       {
         chatTranscriptId,
         userId: { $ne: senderId },
@@ -288,45 +306,28 @@ export const sendMessage = async (payload: createMessageType) => {
   }
 };
 
-export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
+export const getOneToOneChatsList = async (
+  payload: OneToOneListValidatorType
+) => {
   try {
     const { userId, page, pageSize, search } = payload;
+
+    const trimmedSearch = search?.trim() ?? null;
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const skip = (page - 1) * pageSize;
 
     const chatOneToOneData = await ChatParticipants.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(userId),
+          userId: userObjectId,
           status: 'active',
           joinStatus: 'joined',
           chatType: 'ONE_TO_ONE',
         },
       },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'myUser',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                fullName: 1,
-                profileImage: 1,
-                email: 1,
-              },
-            },
-          ],
-        },
-      },
-      {
-        $unwind: {
-          path: '$myUser',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      // other participants
       {
         $lookup: {
           from: 'chat_participants',
@@ -336,7 +337,7 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
           pipeline: [
             {
               $match: {
-                userId: { $ne: new mongoose.Types.ObjectId(userId) },
+                userId: { $ne: userObjectId },
                 status: 'active',
                 joinStatus: 'joined',
                 chatType: 'ONE_TO_ONE',
@@ -375,10 +376,12 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      // chat transcript
       {
         $lookup: {
           from: 'chat_transcripts',
-          localField: 'otherParticipants.chatTranscriptId',
+          localField: 'chatTranscriptId',
           foreignField: '_id',
           as: 'chatTranscript',
           pipeline: [
@@ -389,7 +392,7 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
               },
             },
             {
-              $project: { lastMessageAt: 1, lastMessage: 1, chatType: 1 },
+              $project: { lastMessageAt: 1, lastMessage: 1 },
             },
           ],
         },
@@ -410,6 +413,15 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
           unreadCount: 1,
         },
       },
+      ...(trimmedSearch
+        ? [
+            {
+              $match: {
+                'userDetais.fullName': { $regex: trimmedSearch, $options: 'i' },
+              },
+            },
+          ]
+        : []),
       {
         $facet: {
           data: [
@@ -443,6 +455,275 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
     );
   } catch (error) {
     console.log('error in getOneToOneChats :>> ', error);
+    throw error;
+  }
+};
+
+export const getMyGroupChatsList = async (payload: GroupListValidatorType) => {
+  try {
+    const { userId, page, pageSize, search } = payload;
+
+    const trimmedSearch = search?.trim() ?? null;
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const skip = (page - 1) * pageSize;
+
+    const chatGroupData = await ChatTranscript.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+          isActive: true,
+          chatType: 'GROUP',
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_participants',
+          localField: '_id',
+          foreignField: 'chatTranscriptId',
+          as: 'participants',
+          pipeline: [
+            {
+              $match: {
+                userId: userObjectId,
+                status: 'active',
+                joinStatus: 'joined',
+                chatType: 'GROUP',
+              },
+            },
+          ],
+        },
+      },
+
+      {
+        $unwind: {
+          path: '$participants',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      ...(trimmedSearch
+        ? [
+            {
+              $match: {
+                groupName: { $regex: trimmedSearch, $options: 'i' },
+              },
+            },
+          ]
+        : []),
+      {
+        $facet: {
+          data: [
+            { $sort: { lastMessageAt: -1 } },
+            { $skip: skip },
+            { $limit: pageSize },
+            {
+              $project: {
+                _id: 1,
+                groupName: 1,
+                groupProfileImage: 1,
+                lastMessage: 1,
+                lastMessageAt: 1,
+                unreadCount: '$participants.unreadCount',
+              },
+            },
+          ],
+          totalRecords: [{ $count: 'count' }],
+        },
+      },
+    ]);
+
+    const chatOnetoOne = chatGroupData[0]?.data ?? [];
+    const totalRecords = chatGroupData[0]?.totalRecords[0]?.count || 0;
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    const hasNextPage = page < totalPages;
+
+    const resObj = {
+      chatList: chatOnetoOne,
+      totalRecords,
+      pageSize,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+    };
+
+    return GenResObj(Code.OK, true, 'Group-list fetched successfully', resObj);
+  } catch (error) {
+    console.log('error in getMyGroupChats :>> ', error);
+    throw error;
+  }
+};
+
+export const getOtherGroupChatsList = async (
+  payload: GroupListValidatorType
+) => {
+  try {
+    const { userId, page, pageSize, search } = payload;
+
+    const trimmedSearch = search?.trim() ?? null;
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const skip = (page - 1) * pageSize;
+
+    const chatGroupData = await ChatTranscript.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+          isActive: true,
+          chatType: 'GROUP',
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_participants',
+          localField: '_id',
+          foreignField: 'chatTranscriptId',
+          as: 'userJoined',
+          pipeline: [
+            {
+              $match: {
+                userId: userObjectId,
+                chatType: 'GROUP',
+                status: 'active',
+                joinStatus: 'joined',
+                isDeleted: false,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          isJoined: {
+            $cond: [{ $gt: [{ $size: '$userJoined' }, 0] }, true, false],
+          },
+        },
+      },
+      {
+        $match: {
+          isJoined: false,
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_participants',
+          localField: '_id',
+          foreignField: 'chatTranscriptId',
+          as: 'participants',
+          pipeline: [
+            {
+              $match: {
+                status: 'active',
+                joinStatus: 'joined',
+                chatType: 'GROUP',
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_participants',
+          localField: '_id',
+          foreignField: 'chatTranscriptId',
+          as: 'lastThreeParticipants',
+          pipeline: [
+            {
+              $match: {
+                status: 'active',
+                joinStatus: 'joined',
+                chatType: 'GROUP',
+              },
+            },
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+            {
+              $limit: 3,
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'user',
+                pipeline: [
+                  {
+                    $project: {
+                      _id: 1,
+                      fullName: 1,
+                      profileImage: 1,
+                      email: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: false,
+              },
+            },
+            { $replaceRoot: { newRoot: '$user' } },
+          ],
+        },
+      },
+      ...(trimmedSearch
+        ? [
+            {
+              $match: {
+                groupName: { $regex: trimmedSearch, $options: 'i' },
+              },
+            },
+          ]
+        : []),
+      {
+        $facet: {
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: pageSize },
+            {
+              $project: {
+                _id: 1,
+                groupName: 1,
+                groupProfileImage: 1,
+                memberCount: { $size: '$participants' },
+                lastThreeParticipants: 1,
+              },
+            },
+          ],
+          totalRecords: [{ $count: 'count' }],
+        },
+      },
+    ]);
+
+    const otherGroupList = chatGroupData[0]?.data ?? [];
+    const totalRecords = chatGroupData[0]?.totalRecords[0]?.count || 0;
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    const hasNextPage = page < totalPages;
+
+    const resObj = {
+      otherGroupList,
+      totalRecords,
+      pageSize,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+    };
+
+    return GenResObj(
+      Code.OK,
+      true,
+      'Other Group-list fetched successfully',
+      resObj
+    );
+  } catch (error) {
+    console.log('error in getOtherGroupChats :>> ', error);
     throw error;
   }
 };

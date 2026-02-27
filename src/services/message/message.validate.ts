@@ -35,20 +35,20 @@ export const messageValidator = type({
 export type createMessageType = typeof messageValidator.infer;
 
 
-export const oneToOneValidator = type({
+export const oneToOneListValidator = type({
   userId: 'string',
   page: 'number',
   pageSize: 'number',
   search: 'string?',
 })
 
-export type OneToOneValidatorType = typeof oneToOneValidator.infer
+export type OneToOneListValidatorType = typeof oneToOneListValidator.infer
 
-export const groupValidator = type({
+export const groupListValidator = type({
   userId: 'string',
   page: 'number',
   pageSize: 'number',
   search: 'string?',
 })
 
-export type GroupValidatorType = typeof groupValidator.infer
+export type GroupListValidatorType = typeof groupListValidator.infer

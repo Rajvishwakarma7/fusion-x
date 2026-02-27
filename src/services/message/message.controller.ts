@@ -3,9 +3,10 @@ import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
 import {
   chatTranscriptValidator,
+  groupListValidator,
   joinGroupValidator,
   messageValidator,
-  oneToOneValidator,
+  oneToOneListValidator,
   uploadMessageMediaValidator,
 } from './message.validate';
 
@@ -17,7 +18,7 @@ export const messageController = {
   ) => {
     try {
       const files = req.files as any;
-      const payload = {messageMedia:files?.messageMedia || []};
+      const payload = { messageMedia: files?.messageMedia || [] };
 
       uploadMessageMediaValidator.assert(payload);
 
@@ -28,7 +29,7 @@ export const messageController = {
 
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from upload message media:>> ', error);
       next(error);
     }
   },
@@ -53,7 +54,7 @@ export const messageController = {
 
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from create chat transcript:>> ', error);
       next(error);
     }
   },
@@ -74,7 +75,7 @@ export const messageController = {
 
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from join group:>> ', error);
       next(error);
     }
   },
@@ -94,33 +95,86 @@ export const messageController = {
 
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from send message:>> ', error);
       next(error);
     }
   },
 
-   getOneToOneChats: async (req: Request, res: Response, next: NextFunction) => {
+  getOneToOneChatsList: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
     try {
       const payload = {
-       userId: req?.userData?.userId as string,
+        userId: req?.userData?.userId as string,
         ...req.query,
         page: Number(req.query.page) || 1,
         pageSize: Number(req.query.pageSize) || 10,
       };
-      oneToOneValidator.assert(payload);
+      oneToOneListValidator.assert(payload);
 
       const { code, data }: TGenResObj =
-        await MessageProvider.getOneToOneChats(payload);
+        await MessageProvider.getOneToOneChatsList(payload);
 
       res.status(code).json(data);
 
       return;
     } catch (error) {
-      console.log('error is coming from stripe list plans:>> ', error);
+      console.log('error is coming from get one to one chats list:>> ', error);
       next(error);
     }
   },
 
+  getMyGroupChatsList: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        ...req.query,
+        page: Number(req.query.page) || 1,
+        pageSize: Number(req.query.pageSize) || 10,
+      };
+      groupListValidator.assert(payload);
 
-  
+      const { code, data }: TGenResObj =
+        await MessageProvider.getMyGroupChatsList(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from get my group chats list:>> ', error);
+      next(error);
+    }
+  },
+
+  getOtherGroupChatsList: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        ...req.query,
+        page: Number(req.query.page) || 1,
+        pageSize: Number(req.query.pageSize) || 10,
+      };
+      groupListValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.getOtherGroupChatsList(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from get other group chats list:>> ', error);
+      next(error);
+    }
+  },
 };
