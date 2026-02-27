@@ -16,6 +16,7 @@ import {
 
 import mongoose from 'mongoose';
 import ChatParticipants from '../../models/chatParticipants.model.js';
+import { lstat } from 'fs';
 
 export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
   try {
@@ -258,6 +259,28 @@ export const sendMessage = async (payload: createMessageType) => {
       ...newMessage.toObject(),
     };
 
+    await ChatTranscript.updateOne(
+      {
+        _id: chatTranscriptId,
+      },
+      {
+        lastMessage: text ? text : 'media',
+        lastMessageAt: new Date(),
+      }
+    );
+
+    await ChatParticipants.updateOne(
+      {
+        chatTranscriptId,
+        userId: { $ne: senderId },
+      },
+      {
+        $inc: {
+          unreadCount: 1,
+        },
+      }
+    );
+
     return GenResObj(Code.OK, true, 'Message sent successfully', resObj);
   } catch (error) {
     console.log('error in sendMessage :>> ', error);
@@ -269,22 +292,154 @@ export const getOneToOneChats = async (payload: OneToOneValidatorType) => {
   try {
     const { userId, page, pageSize, search } = payload;
 
-    const chatTranscriptData = await ChatTranscript.aggregate([
+    const skip = (page - 1) * pageSize;
+
+    const chatOneToOneData = await ChatParticipants.aggregate([
       {
         $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          status: 'active',
+          joinStatus: 'joined',
           chatType: 'ONE_TO_ONE',
-          participants: new mongoose.Types.ObjectId(userId),
-          isDeleted: false,
-          isActive: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'myUser',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                fullName: 1,
+                profileImage: 1,
+                email: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$myUser',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_participants',
+          localField: 'chatTranscriptId',
+          foreignField: 'chatTranscriptId',
+          as: 'otherParticipants',
+          pipeline: [
+            {
+              $match: {
+                userId: { $ne: new mongoose.Types.ObjectId(userId) },
+                status: 'active',
+                joinStatus: 'joined',
+                chatType: 'ONE_TO_ONE',
+              },
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'otherUser',
+                pipeline: [
+                  {
+                    $project: {
+                      _id: 1,
+                      fullName: 1,
+                      profileImage: 1,
+                      email: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $unwind: {
+                path: '$otherUser',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$otherParticipants',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'chat_transcripts',
+          localField: 'otherParticipants.chatTranscriptId',
+          foreignField: '_id',
+          as: 'chatTranscript',
+          pipeline: [
+            {
+              $match: {
+                isDeleted: false,
+                isActive: true,
+              },
+            },
+            {
+              $project: { lastMessageAt: 1, lastMessage: 1, chatType: 1 },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$chatTranscript',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          lastMessage: '$chatTranscript.lastMessage',
+          lastMessageAt: '$chatTranscript.lastMessageAt',
+          chatTranscriptId: '$_id',
+          userDetais: '$otherParticipants.otherUser',
+          chatType: 1,
+          unreadCount: 1,
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $sort: { lastMessageAt: -1 } },
+            { $skip: skip },
+            { $limit: pageSize },
+          ],
+          totalRecords: [{ $count: 'count' }],
         },
       },
     ]);
+    const chatOnetoOne = chatOneToOneData[0]?.data ?? [];
+    const totalRecords = chatOneToOneData[0]?.totalRecords[0]?.count || 0;
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    const hasNextPage = page < totalPages;
+
+    const resObj = {
+      chatList: chatOnetoOne,
+      totalRecords,
+      pageSize,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+    };
 
     return GenResObj(
       Code.OK,
       true,
       'One to one chats-list fetched successfully',
-      chatTranscriptData
+      resObj
     );
   } catch (error) {
     console.log('error in getOneToOneChats :>> ', error);

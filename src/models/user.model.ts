@@ -6,6 +6,7 @@ const userSchema = new Schema<TUserModel>(
     fullName: { type: String, required: true, min: 3, max: 50 },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    profileImage: { type: String, default: '' },
     status: {
       type: String,
       default: "active",

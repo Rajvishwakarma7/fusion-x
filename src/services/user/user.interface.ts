@@ -4,6 +4,7 @@ export type TUser = {
   email: string;
   password: string;
   status: string;
+  profileImage: string;
   deleted: boolean;
   deletedAt: Date;
   stripeCustomerId: string;

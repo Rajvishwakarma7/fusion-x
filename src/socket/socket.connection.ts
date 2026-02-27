@@ -76,8 +76,6 @@ function handleSocketEvents(socket: Socket, userId: string) {
       try {
         payload.senderId = userId;
         const { code, data }: TGenResObj = await sendMessage(payload);
-        console.log('data', data);
-        console.log('code', code);
 
         if (code === Code.OK) {
           socket
@@ -94,8 +92,7 @@ function handleSocketEvents(socket: Socket, userId: string) {
       try {
         payload.senderId = userId;
         const { code, data }: TGenResObj = await sendMessage(payload);
-        console.log('data', data);
-        console.log('code', code);
+        
         if (code === Code.OK) {
           socket
             .to(payload.chatTranscriptId)
