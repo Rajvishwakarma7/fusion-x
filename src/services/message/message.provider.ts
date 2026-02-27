@@ -311,11 +311,8 @@ export const getOneToOneChatsList = async (
 ) => {
   try {
     const { userId, page, pageSize, search } = payload;
-
     const trimmedSearch = search?.trim() ?? null;
-
     const userObjectId = new mongoose.Types.ObjectId(userId);
-
     const skip = (page - 1) * pageSize;
 
     const chatOneToOneData = await ChatParticipants.aggregate([
@@ -407,7 +404,7 @@ export const getOneToOneChatsList = async (
         $project: {
           lastMessage: '$chatTranscript.lastMessage',
           lastMessageAt: '$chatTranscript.lastMessageAt',
-          chatTranscriptId: '$_id',
+          chatTranscriptId: '$chatTranscriptId',
           userDetais: '$otherParticipants.otherUser',
           chatType: 1,
           unreadCount: 1,
@@ -462,11 +459,8 @@ export const getOneToOneChatsList = async (
 export const getMyGroupChatsList = async (payload: GroupListValidatorType) => {
   try {
     const { userId, page, pageSize, search } = payload;
-
     const trimmedSearch = search?.trim() ?? null;
-
     const userObjectId = new mongoose.Types.ObjectId(userId);
-
     const skip = (page - 1) * pageSize;
 
     const chatGroupData = await ChatTranscript.aggregate([
@@ -520,6 +514,7 @@ export const getMyGroupChatsList = async (payload: GroupListValidatorType) => {
             {
               $project: {
                 _id: 1,
+                chatTranscriptId: '$_id',
                 groupName: 1,
                 groupProfileImage: 1,
                 lastMessage: 1,
@@ -559,11 +554,8 @@ export const getOtherGroupChatsList = async (
 ) => {
   try {
     const { userId, page, pageSize, search } = payload;
-
     const trimmedSearch = search?.trim() ?? null;
-
     const userObjectId = new mongoose.Types.ObjectId(userId);
-
     const skip = (page - 1) * pageSize;
 
     const chatGroupData = await ChatTranscript.aggregate([
@@ -694,6 +686,7 @@ export const getOtherGroupChatsList = async (
                 groupProfileImage: 1,
                 memberCount: { $size: '$participants' },
                 lastThreeParticipants: 1,
+                chatTranscriptId: '$_id',
               },
             },
           ],

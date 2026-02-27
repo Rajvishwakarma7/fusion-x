@@ -2,8 +2,6 @@ import { decodeToken } from '../helper/decodeToken';
 import { logger } from '../logger';
 import { Server, Socket } from 'socket.io';
 import { sendMessage } from '../services/message/message.provider';
-import ChatTranscript from '../models/chatTranscript.model';
-import GroupMember from '../models/chatParticipants.model';
 import mongoose from 'mongoose';
 import { TGenResObj } from '../utils/commonInterface.utils';
 import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
@@ -34,7 +32,7 @@ const initSocket = (io: Server) => {
       logger.info(`🟢 Connected: ${userId} | socket: ${socket.id}`);
 
       onlineUsers.set(userId, socket.id);
-
+      
       // join rooms  ----
       await joinUserRooms(socket, userId);
 
@@ -109,3 +107,10 @@ function handleSocketEvents(socket: Socket, userId: string) {
 }
 
 export { initSocket, onlineUsers };
+
+
+
+//  message acknowledgement for group and direct messages,
+//  typing indicator for group and direct messages,
+//  block and blocked users (notifications) api and socket events,
+//  chatted-list thread updation for group and direct messages
