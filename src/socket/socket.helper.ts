@@ -71,3 +71,21 @@ export async function handleConversationUpdate(
     throw error;
   }
 }
+
+
+export const updateMessageLastSeen = async(chatTranscriptId:String,userId:String)=>{
+  try {
+      await ChatParticipants.findOneAndUpdate(
+      { chatTranscriptId, userId },
+      {
+        $set: {
+          unreadCount: 0,
+          lastReadAt: new Date(),
+        },
+      }
+    );
+  } catch (error) {
+    console.log('error is coming from update message last seen:>> ', error);
+    throw error;
+  }
+}

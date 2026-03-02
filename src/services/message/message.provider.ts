@@ -1,5 +1,4 @@
 import ChatTranscript from '../../models/chatTranscript.model.js';
-import GroupMember from '../../models/chatParticipants.model.js';
 import Message from '../../models/message.model.js';
 import MessageMedia from '../../models/messageMedia.model.js';
 import users from '../../models/user.model.js';
@@ -108,12 +107,14 @@ export const createChatTranscript = async (
           chatType,
           userId: fromId,
           joinStatus: 'joined',
+          joinedAt: new Date(),
         }),
         ChatParticipants.create({
           chatTranscriptId: newChatTranscript._id,
           chatType,
           userId: toId,
           joinStatus: 'joined',
+          joinedAt: new Date(),
         }),
       ]);
 
@@ -151,11 +152,12 @@ export const createChatTranscript = async (
       });
 
       // Automatically add the group creator as a member of the group
-      await GroupMember.create({
+      await ChatParticipants.create({
         chatTranscriptId: createGroup._id,
         userId: fromId,
         joinStatus: 'joined',
         chatType,
+        joinedAt: new Date(),
       });
       return GenResObj(
         Code.OK,
@@ -212,6 +214,7 @@ export const joinGroup = async (payload: JoinGroupType) => {
       userId,
       joinStatus: 'joined',
       chatType: 'GROUP',
+      joinedAt: new Date(),
     });
 
     return GenResObj(Code.OK, true, 'Group joined successfully');

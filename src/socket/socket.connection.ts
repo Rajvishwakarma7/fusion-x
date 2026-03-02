@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import { TGenResObj } from '../utils/commonInterface.utils';
 import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
 import ChatParticipants from '../models/chatParticipants.model';
-import { handleConversationUpdate } from './socket.helper';
+import { handleConversationUpdate, updateMessageLastSeen } from './socket.helper';
 
 const onlineUsers = new Map();
 
@@ -124,11 +124,40 @@ function handleSocketEvents(socket: Socket, userId: string) {
     console.error('Error handling socket receive events:', error);
     throw error;
   }
+
+  // typing indicator
+  socket.on(SocketEvents.USER_TYPING, (payload) => {
+    socket.to(payload.chatTranscriptId).emit(SocketEvents.USER_TYPING, payload);
+  });
+
+  socket.on(SocketEvents.USER_STOP_TYPING, (payload) => {
+    socket
+      .to(payload.chatTranscriptId)
+      .emit(SocketEvents.USER_STOP_TYPING, payload);
+  });
+
+  socket.on(SocketEvents.MESSAGE_SEEN, async (payload) => {
+    await updateMessageLastSeen(payload.chatTranscriptId, userId);
+    socket.to(payload.chatTranscriptId).emit(SocketEvents.MESSAGE_SEEN, payload);
+  });
 }
 
 export { initSocket, onlineUsers };
 
-//  message acknowledgement for group and direct messages,
-//  typing indicator for group and direct messages,
+
 //  block and blocked users (notifications) api and socket events,
-//  chatted-list thread updation for group and direct messages
+
+
+// group message api and one to one message api , with ( last seen users)
+
+// {
+//   messages: [...],
+//   participants: [
+//     { userId, lastReadAt },
+//     { userId, lastReadAt }
+//   ]
+// }
+
+// if (message.createdAt <= receiver.lastReadAt) {
+//    showBlueTick()
+// }

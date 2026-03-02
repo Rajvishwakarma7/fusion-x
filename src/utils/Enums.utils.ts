@@ -52,17 +52,17 @@ export enum SocketEvents {
   USER_TYPING = 'user:typing',
   USER_STOP_TYPING = 'user:stop_typing',
 
-  // Direct messages
+  
+  //  messages
+  MESSAGE_SEEN = 'message:seen',
+  
   DIRECT_SEND = 'chat:direct:send',
   DIRECT_RECEIVE = 'chat:direct:receive',
-  DIRECT_DELIVERED = 'chat:direct:delivered',
-  DIRECT_READ = 'chat:direct:read',
+  // DIRECT_DELIVERED = 'chat:direct:delivered',
   DIRECT_CONVERSATION_UPDATE = 'chat:direct:conversation_update',
 
-  // Group messages
   GROUP_SEND = 'chat:group:send',
   GROUP_RECEIVE = 'chat:group:receive',
-  GROUP_DELIVERED = 'chat:group:delivered',
-  GROUP_READ = 'chat:group:read',
+  // GROUP_DELIVERED = 'chat:group:delivered',
   GROUP_CONVERSATION_UPDATE = 'chat:group:conversation_update',
 }
