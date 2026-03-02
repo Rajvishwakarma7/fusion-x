@@ -1,5 +1,5 @@
 import { ArkErrors } from 'arktype';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 export enum HttpStatusCodes {
   ACCEPTED = 202,
@@ -22,26 +22,27 @@ export enum HttpStatusCodes {
   ACCESS_TOKEN_EXPIRED = 440,
 }
 
-
 export type TTokenUser = {
-  userId: string ;
+  userId: string;
   role?: string;
 };
 
 export const getEnumValues = (data: Record<string, string>) =>
   Object.values(data);
 
-export type ErrorHandlerType = (error: ArkErrors | mongoose.Error | Error) => void;
+export type ErrorHandlerType = (
+  error: ArkErrors | mongoose.Error | Error
+) => void;
 
 export enum UserStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
 }
 
 export enum UserRoles {
-  USER = "user",
-  ORGANIZATION = "organization",
-  ADMIN = "admin",
+  USER = 'user',
+  ORGANIZATION = 'organization',
+  ADMIN = 'admin',
 }
 
 export enum SocketEvents {
@@ -56,10 +57,12 @@ export enum SocketEvents {
   DIRECT_RECEIVE = 'chat:direct:receive',
   DIRECT_DELIVERED = 'chat:direct:delivered',
   DIRECT_READ = 'chat:direct:read',
+  DIRECT_CONVERSATION_UPDATE = 'chat:direct:conversation_update',
 
   // Group messages
   GROUP_SEND = 'chat:group:send',
   GROUP_RECEIVE = 'chat:group:receive',
   GROUP_DELIVERED = 'chat:group:delivered',
   GROUP_READ = 'chat:group:read',
+  GROUP_CONVERSATION_UPDATE = 'chat:group:conversation_update',
 }

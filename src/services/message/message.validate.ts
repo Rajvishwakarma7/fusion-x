@@ -28,8 +28,8 @@ export type JoinGroupType = typeof joinGroupValidator.infer;
 export const messageValidator = type({
   chatTranscriptId: 'string',
   senderId: 'string',
-  text: 'string',
-  media: 'string[]',
+  text: 'string?',
+  media: 'string[]?',
 });
 
 export type createMessageType = typeof messageValidator.infer;

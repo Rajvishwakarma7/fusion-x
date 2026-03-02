@@ -27,7 +27,6 @@ export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
     const mediaFiles = await uploadMessageMediaHelper(messageMedia);
     return GenResObj(Code.OK, true, 'Media uploaded successfully', mediaFiles);
   } catch (error) {
-    sendMessage;
     console.log('error in uploadMessageMedia :>> ', error);
     throw error;
   }
@@ -225,9 +224,10 @@ export const joinGroup = async (payload: JoinGroupType) => {
 export const sendMessage = async (payload: createMessageType) => {
   try {
     const { chatTranscriptId, senderId, text, media } = payload;
+
     const chatTranscript = await ChatTranscript.findOne({
       _id: chatTranscriptId,
-    });
+    }).lean();
 
     if (!chatTranscript) {
       return GenResObj(
@@ -253,12 +253,18 @@ export const sendMessage = async (payload: createMessageType) => {
         'User is not a member of this chat transcript or inactive or deleted'
       );
     }
+    const chatType = chatTranscript.chatType;
 
     const newMessage = await Message.create({
       chatTranscriptId,
       senderId,
       text,
     });
+
+    const senderInfo = await users
+      .findById(senderId)
+      .select('name email profileImage')
+      .lean();
 
     if (media && media.length > 0) {
       await MessageMedia.updateMany(
@@ -271,10 +277,14 @@ export const sendMessage = async (payload: createMessageType) => {
         ? await MessageMedia.find({ messageId: newMessage._id })
         : [];
 
-    let resObj = {
+    let resObj: any = {
       media: msgMedia,
       ...newMessage.toObject(),
     };
+
+    if (chatType === 'ONE_TO_ONE') {
+      resObj.senderInfo = senderInfo;
+    }
 
     await ChatTranscript.updateOne(
       {
@@ -405,7 +415,7 @@ export const getOneToOneChatsList = async (
           lastMessage: '$chatTranscript.lastMessage',
           lastMessageAt: '$chatTranscript.lastMessageAt',
           chatTranscriptId: '$chatTranscriptId',
-          userDetais: '$otherParticipants.otherUser',
+          senderInfo: '$otherParticipants.otherUser',
           chatType: 1,
           unreadCount: 1,
         },
@@ -414,7 +424,7 @@ export const getOneToOneChatsList = async (
         ? [
             {
               $match: {
-                'userDetais.fullName': { $regex: trimmedSearch, $options: 'i' },
+                'senderInfo.fullName': { $regex: trimmedSearch, $options: 'i' },
               },
             },
           ]
@@ -520,6 +530,7 @@ export const getMyGroupChatsList = async (payload: GroupListValidatorType) => {
                 lastMessage: 1,
                 lastMessageAt: 1,
                 unreadCount: '$participants.unreadCount',
+                chatType: 1,
               },
             },
           ],
@@ -687,6 +698,7 @@ export const getOtherGroupChatsList = async (
                 memberCount: { $size: '$participants' },
                 lastThreeParticipants: 1,
                 chatTranscriptId: '$_id',
+                chatType: 1,
               },
             },
           ],

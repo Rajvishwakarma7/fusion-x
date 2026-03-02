@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import { TGenResObj } from '../utils/commonInterface.utils';
 import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
 import ChatParticipants from '../models/chatParticipants.model';
+import { handleConversationUpdate } from './socket.helper';
 
 const onlineUsers = new Map();
 
@@ -32,7 +33,7 @@ const initSocket = (io: Server) => {
       logger.info(`🟢 Connected: ${userId} | socket: ${socket.id}`);
 
       onlineUsers.set(userId, socket.id);
-      
+
       // join rooms  ----
       await joinUserRooms(socket, userId);
 
@@ -54,8 +55,9 @@ const initSocket = (io: Server) => {
 
 // join rooom
 async function joinUserRooms(socket: Socket, userId: string) {
-  const userObjectId = new mongoose.Types.ObjectId(userId);
+  socket.join(userId); // personal room
 
+  const userObjectId = new mongoose.Types.ObjectId(userId);
   const allChats = await ChatParticipants.find({
     userId: userObjectId,
     status: 'active',
@@ -70,7 +72,7 @@ async function joinUserRooms(socket: Socket, userId: string) {
 function handleSocketEvents(socket: Socket, userId: string) {
   try {
     // group messaging
-    socket.on(SocketEvents.GROUP_SEND, async (payload) => {
+    socket.on(SocketEvents.GROUP_SEND, async (payload, callback) => {
       try {
         payload.senderId = userId;
         const { code, data }: TGenResObj = await sendMessage(payload);
@@ -79,6 +81,15 @@ function handleSocketEvents(socket: Socket, userId: string) {
           socket
             .to(payload.chatTranscriptId)
             .emit(SocketEvents.GROUP_RECEIVE, data?.data);
+
+          handleConversationUpdate(payload.chatTranscriptId, userId);
+
+          if (callback) {
+            callback({
+              status: 'sent',
+              messageId: data?.data._id,
+            });
+          }
         }
       } catch (error) {
         console.error('Error in chat:group:send event:', error);
@@ -86,15 +97,24 @@ function handleSocketEvents(socket: Socket, userId: string) {
     });
 
     // direct messaging
-    socket.on(SocketEvents.DIRECT_SEND, async (payload) => {
+    socket.on(SocketEvents.DIRECT_SEND, async (payload, callback) => {
       try {
         payload.senderId = userId;
         const { code, data }: TGenResObj = await sendMessage(payload);
-        
+
         if (code === Code.OK) {
           socket
             .to(payload.chatTranscriptId)
             .emit(SocketEvents.DIRECT_RECEIVE, data?.data);
+
+          handleConversationUpdate(payload.chatTranscriptId, userId);
+
+          if (callback) {
+            callback({
+              status: 'sent',
+              messageId: data?.data._id,
+            });
+          }
         }
       } catch (error) {
         console.log('Error in chat:direct:send event:', error);
@@ -107,8 +127,6 @@ function handleSocketEvents(socket: Socket, userId: string) {
 }
 
 export { initSocket, onlineUsers };
-
-
 
 //  message acknowledgement for group and direct messages,
 //  typing indicator for group and direct messages,
