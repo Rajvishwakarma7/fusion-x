@@ -3,6 +3,8 @@ import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
 import {
   chatTranscriptValidator,
+  groupChatHistoryValidator,
+  groupChatValidator,
   groupListValidator,
   joinGroupValidator,
   messageValidator,
@@ -174,6 +176,48 @@ export const messageController = {
       return;
     } catch (error) {
       console.log('error is coming from get other group chats list:>> ', error);
+      next(error);
+    }
+  },
+
+  getHeaderInfo: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        chatTranscriptId: req.params.chatTranscriptId as string,
+      };
+      groupChatValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.getHeaderInfo(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from get header info:>> ', error);
+      next(error);
+    }
+  },
+
+  getChatHistory: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        chatTranscriptId: req.params.chatTranscriptId as string,
+        page: Number(req.query.page) || 1,
+        pageSize: Number(req.query.pageSize) || 10,
+      };
+      groupChatHistoryValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.getChatHistory(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from get header info:>> ', error);
       next(error);
     }
   },

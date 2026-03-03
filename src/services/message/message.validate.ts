@@ -52,3 +52,22 @@ export const groupListValidator = type({
 })
 
 export type GroupListValidatorType = typeof groupListValidator.infer
+
+export const groupChatValidator = type({
+  userId: 'string',
+  chatTranscriptId: 'string'
+})
+
+export type GroupChatValidatorType = typeof groupChatValidator.infer
+
+
+
+export const groupChatHistoryValidator = type({
+  userId: 'string',
+  chatTranscriptId: 'string',
+  page: 'number',
+  pageSize: 'number',
+  
+})
+
+export type GroupChatHistoryValidatorType = typeof groupChatHistoryValidator.infer

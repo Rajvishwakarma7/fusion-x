@@ -21,8 +21,13 @@ router.route('/join-group').post(MessageController.joinGroup);
 router.route('/send-message').post(MessageController.sendMessage);
 
 // manage chats list
-router.get('/chat-list/one-to-one', MessageController.getOneToOneChatsList);
-router.get('/chat-list/my-groups', MessageController.getMyGroupChatsList);
-router.get('/chat-list/others-groups', MessageController.getOtherGroupChatsList);
+
+router.route('/chat-list/one-to-one').get(MessageController.getOneToOneChatsList);
+router.route('/chat-list/my-groups').get(MessageController.getMyGroupChatsList);
+router.route('/chat-list/others-groups').get(MessageController.getOtherGroupChatsList);
+
+// message 
+router.route('/header-info/:chatTranscriptId').get( MessageController.getHeaderInfo);
+router.route('/history').get(MessageController.getChatHistory);
 
 export default router;

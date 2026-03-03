@@ -8,6 +8,8 @@ import { uploadMessageMediaHelper } from './message.helper.js';
 import {
   CreateChatTranscriptType,
   createMessageType,
+  GroupChatHistoryValidatorType,
+  GroupChatValidatorType,
   GroupListValidatorType,
   JoinGroupType,
   OneToOneListValidatorType,
@@ -735,3 +737,108 @@ export const getOtherGroupChatsList = async (
     throw error;
   }
 };
+
+export const getHeaderInfo = async (payload: GroupChatValidatorType) => {
+  try {
+    const { userId, chatTranscriptId } = payload;
+
+    const chatTranscript = await ChatTranscript.findOne({
+      _id: chatTranscriptId,
+      isDeleted: false,
+    }).lean();
+
+    if (!chatTranscript) {
+      return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+    }
+
+    const chatType = chatTranscript?.chatType;
+
+    if (chatType === 'ONE_TO_ONE') {
+      const joinedUser = await ChatParticipants.findOne({
+        chatTranscriptId,
+        chatType: 'ONE_TO_ONE',
+        userId: { $ne: userId },
+        status: 'active',
+        isDeleted: false,
+        joinStatus: 'joined',
+      })
+        .populate('userId', 'fullName profileImage email')
+        .lean();
+
+      if (!joinedUser) {
+        return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+      }
+
+      const resObj = {
+        chatTranscriptId,
+        chatType,
+        userInfo: joinedUser.userId,
+      };
+
+      return GenResObj(
+        Code.OK,
+        true,
+        'Header info fetched successfully',
+        resObj
+      );
+    } else if (chatType === 'GROUP') {
+      const topThreeUsers = await ChatParticipants.find({
+        chatTranscriptId,
+        chatType: 'GROUP',
+        isDeleted: false,
+        joinStatus: 'joined',
+      })
+        .sort({ createdAt: -1 })
+        .populate('userId', 'fullName profileImage email')
+        .limit(3)
+        .lean();
+      const users = topThreeUsers?.map((p) => p?.userId);
+
+      const totalUsers = await ChatParticipants.countDocuments({
+        chatTranscriptId,
+        chatType: 'GROUP',
+        isDeleted: false,
+        joinStatus: 'joined',
+      });
+      const resObj = {
+        ...chatTranscript,
+        users,
+        totalUsers,
+      };
+      return GenResObj(
+        Code.OK,
+        true,
+        'Header info fetched successfully',
+        resObj
+      );
+    }
+    return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+  } catch (error) {
+    console.log('error in getHeaderInfo :>> ', error);
+    throw error;
+  }
+};
+
+
+export const getChatHistory = async (payload: GroupChatHistoryValidatorType) => {
+  try {
+    const { userId, chatTranscriptId } = payload;
+
+    const chatTranscript = await ChatTranscript.findOne({
+      _id: chatTranscriptId,
+      isDeleted: false,
+    }).lean();
+
+    if (!chatTranscript) {
+      return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+    }
+
+    return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+  } catch (error) {
+    console.log('error in getHeaderInfo :>> ', error);
+    throw error;
+  }
+};
+
+
+
