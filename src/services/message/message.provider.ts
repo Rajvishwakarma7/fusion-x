@@ -823,11 +823,7 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
   try {
     const { userId, chatTranscriptId, page, pageSize } = payload;
 
-    console.log('chatTranscriptId:>> ', chatTranscriptId);
-    console.log('payload:>> ', payload);
-
-    // we need show message with senderInfo,
-    // In array lastSeen (User)
+    const skip = (page - 1) * pageSize;
 
     const chatTranscript = await ChatTranscript.findOne({
       _id: chatTranscriptId,
@@ -837,6 +833,12 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
     if (!chatTranscript) {
       return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
     }
+
+    const lastSeenUsers = await ChatParticipants.find({
+      chatTranscriptId,
+      isDeleted: false,
+      joinStatus: 'joined',
+    });
 
     const messageData = await Message.aggregate([
       {
@@ -883,13 +885,51 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
           },
         },
       },
+
+      {
+        $facet: {
+          data: [
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+            {
+              $skip: skip,
+            },
+            {
+              $limit: pageSize,
+            },
+          ],
+          totalRecords: [
+            {
+              $count: 'count',
+            },
+          ],
+        },
+      },
     ]);
+
+    const message = messageData[0]?.data ?? [];
+    const totalRecords = messageData[0]?.totalRecords[0]?.count || 0;
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    const hasNextPage = page < totalPages;
+
+    const resObj = {
+      message,
+      totalRecords,
+      pageSize,
+      currentPage: page,
+      totalPages,
+      hasNextPage,
+      lastSeenUsers,
+    };
 
     return GenResObj(
       Code.OK,
       true,
       'Chat history fetched successfully',
-      messageData
+      resObj
     );
   } catch (error) {
     console.log('error in getHeaderInfo :>> ', error);
