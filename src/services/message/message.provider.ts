@@ -838,6 +838,7 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       chatTranscriptId,
       isDeleted: false,
       joinStatus: 'joined',
+      userId: { $ne: new mongoose.Types.ObjectId(userId) },
     });
 
     const messageData = await Message.aggregate([
