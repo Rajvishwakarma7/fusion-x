@@ -2,8 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
 import {
+  chatHistoryValidator,
   chatTranscriptValidator,
-  groupChatHistoryValidator,
   groupChatValidator,
   groupListValidator,
   joinGroupValidator,
@@ -204,11 +204,11 @@ export const messageController = {
     try {
       const payload = {
         userId: req?.userData?.userId as string,
-        chatTranscriptId: req.params.chatTranscriptId as string,
+        chatTranscriptId: req.query.chatTranscriptId as string,
         page: Number(req.query.page) || 1,
         pageSize: Number(req.query.pageSize) || 10,
       };
-      groupChatHistoryValidator.assert(payload);
+      chatHistoryValidator.assert(payload);
 
       const { code, data }: TGenResObj =
         await MessageProvider.getChatHistory(payload);

@@ -62,7 +62,7 @@ export type GroupChatValidatorType = typeof groupChatValidator.infer
 
 
 
-export const groupChatHistoryValidator = type({
+export const chatHistoryValidator = type({
   userId: 'string',
   chatTranscriptId: 'string',
   page: 'number',
@@ -70,4 +70,4 @@ export const groupChatHistoryValidator = type({
   
 })
 
-export type GroupChatHistoryValidatorType = typeof groupChatHistoryValidator.infer
+export type chatHistoryValidatorType = typeof chatHistoryValidator.infer

@@ -6,9 +6,9 @@ import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import { uploadMessageMediaHelper } from './message.helper.js';
 import {
+  chatHistoryValidatorType,
   CreateChatTranscriptType,
   createMessageType,
-  GroupChatHistoryValidatorType,
   GroupChatValidatorType,
   GroupListValidatorType,
   JoinGroupType,
@@ -819,10 +819,15 @@ export const getHeaderInfo = async (payload: GroupChatValidatorType) => {
   }
 };
 
-
-export const getChatHistory = async (payload: GroupChatHistoryValidatorType) => {
+export const getChatHistory = async (payload: chatHistoryValidatorType) => {
   try {
-    const { userId, chatTranscriptId } = payload;
+    const { userId, chatTranscriptId, page, pageSize } = payload;
+
+    console.log('chatTranscriptId:>> ', chatTranscriptId);
+    console.log('payload:>> ', payload);
+
+    // we need show message with senderInfo,
+    // In array lastSeen (User)
 
     const chatTranscript = await ChatTranscript.findOne({
       _id: chatTranscriptId,
@@ -833,12 +838,61 @@ export const getChatHistory = async (payload: GroupChatHistoryValidatorType) => 
       return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
     }
 
-    return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
+    const messageData = await Message.aggregate([
+      {
+        $match: {
+          chatTranscriptId: new mongoose.Types.ObjectId(chatTranscriptId),
+        },
+      },
+      {
+        $lookup: {
+          from: 'messagemedias',
+          localField: '_id',
+          foreignField: 'messageId',
+          as: 'messageMedia',
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'senderId',
+          foreignField: '_id',
+          as: 'senderInfo',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                fullName: 1,
+                profileImage: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$senderInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          isYou: {
+            $eq: ['$senderId', new mongoose.Types.ObjectId(userId)],
+          },
+        },
+      },
+    ]);
+
+    return GenResObj(
+      Code.OK,
+      true,
+      'Chat history fetched successfully',
+      messageData
+    );
   } catch (error) {
     console.log('error in getHeaderInfo :>> ', error);
     throw error;
   }
 };
-
-
-
