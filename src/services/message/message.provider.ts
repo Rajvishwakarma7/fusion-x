@@ -834,12 +834,12 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
     }
 
-    const lastSeenUsers = await ChatParticipants.find({
-      chatTranscriptId,
-      isDeleted: false,
-      joinStatus: 'joined',
-      userId: { $ne: new mongoose.Types.ObjectId(userId) },
-    });
+    // const lastSeenUsers = await ChatParticipants.find({
+    //   chatTranscriptId,
+    //   isDeleted: false,
+    //   joinStatus: 'joined',
+    //   userId: { $ne: new mongoose.Types.ObjectId(userId) },
+    // }).lean();
 
     const messageData = await Message.aggregate([
       {
@@ -847,6 +847,7 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
           chatTranscriptId: new mongoose.Types.ObjectId(chatTranscriptId),
         },
       },
+
       {
         $lookup: {
           from: 'messagemedias',
@@ -873,12 +874,14 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
           ],
         },
       },
+
       {
         $unwind: {
           path: '$senderInfo',
           preserveNullAndEmptyArrays: true,
         },
       },
+
       {
         $addFields: {
           isYou: {
@@ -923,7 +926,7 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       currentPage: page,
       totalPages,
       hasNextPage,
-      lastSeenUsers,
+      // lastSeenUsers,
     };
 
     return GenResObj(
@@ -933,7 +936,7 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       resObj
     );
   } catch (error) {
-    console.log('error in getHeaderInfo :>> ', error);
+    console.log('error in getChatHistory :>> ', error);
     throw error;
   }
 };
