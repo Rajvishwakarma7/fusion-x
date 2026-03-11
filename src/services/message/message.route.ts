@@ -30,4 +30,7 @@ router.route('/chat-list/others-groups').get(MessageController.getOtherGroupChat
 router.route('/header-info/:chatTranscriptId').get( MessageController.getHeaderInfo);
 router.route('/history').get(MessageController.getChatHistory);
 
+// block & unblock
+router.route('/user-block').post(MessageController.blockUser);
+
 export default router;

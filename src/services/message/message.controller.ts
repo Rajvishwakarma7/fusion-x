@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { TGenResObj } from '../../utils/commonInterface.utils';
 import * as MessageProvider from './message.provider';
 import {
+  blockUserValidator,
   chatHistoryValidator,
   chatTranscriptValidator,
   groupChatValidator,
@@ -221,4 +222,27 @@ export const messageController = {
       next(error);
     }
   },
+
+   blockUser: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const payload = {
+        userId: req?.userData?.userId as string,
+        ...req.body,
+      };
+      blockUserValidator.assert(payload);
+
+      const { code, data }: TGenResObj =
+        await MessageProvider.blockUser(payload);
+
+      res.status(code).json(data);
+
+      return;
+    } catch (error) {
+      console.log('error is coming from block user:>> ', error);
+      next(error);
+    }
+  },
 };
+
+
+

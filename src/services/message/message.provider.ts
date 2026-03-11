@@ -5,7 +5,9 @@ import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
 import { uploadMessageMediaHelper } from './message.helper.js';
+
 import {
+  blockUserValidatorType,
   chatHistoryValidatorType,
   CreateChatTranscriptType,
   createMessageType,
@@ -18,6 +20,7 @@ import {
 
 import mongoose from 'mongoose';
 import ChatParticipants from '../../models/chatParticipants.model.js';
+import UserBlock from '../../models/userBlock.model.js';
 
 export const uploadMessageMedia = async (payload: UploadMessageMediaType) => {
   try {
@@ -834,13 +837,6 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
     }
 
-    // const lastSeenUsers = await ChatParticipants.find({
-    //   chatTranscriptId,
-    //   isDeleted: false,
-    //   joinStatus: 'joined',
-    //   userId: { $ne: new mongoose.Types.ObjectId(userId) },
-    // }).lean();
-
     const messageData = await Message.aggregate([
       {
         $match: {
@@ -926,7 +922,6 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
       currentPage: page,
       totalPages,
       hasNextPage,
-      // lastSeenUsers,
     };
 
     return GenResObj(
@@ -937,6 +932,35 @@ export const getChatHistory = async (payload: chatHistoryValidatorType) => {
     );
   } catch (error) {
     console.log('error in getChatHistory :>> ', error);
+    throw error;
+  }
+};
+
+export const blockUser = async (payload: blockUserValidatorType) => {
+  try {
+    const { userId, blockedUser, isBlock, blockReason } = payload;
+
+    const avlUser = await users.findOne({ _id: blockedUser });
+    if (!avlUser) {
+      return GenResObj(Code.BAD_REQUEST, false, 'This User not found');
+    }
+
+    if (isBlock) {
+      await UserBlock.create({
+        blockedBy: userId,
+        blockedUser,
+        blockReason,
+      });
+      return GenResObj(Code.OK, true, 'User blocked successfully');
+    } else {
+      await UserBlock.deleteMany({
+        blockedBy: userId,
+        blockedUser,
+      });
+      return GenResObj(Code.OK, true, 'User unblocked successfully');
+    }
+  } catch (error) {
+    console.log('error in blockUser :>> ', error);
     throw error;
   }
 };

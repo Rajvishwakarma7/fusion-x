@@ -71,3 +71,12 @@ export const chatHistoryValidator = type({
 })
 
 export type chatHistoryValidatorType = typeof chatHistoryValidator.infer
+
+export const blockUserValidator = type({
+  userId: 'string',
+  blockedUser: 'string',
+  isBlock: 'boolean',
+  "blockReason?": 'string'
+})
+
+export type blockUserValidatorType = typeof blockUserValidator.infer

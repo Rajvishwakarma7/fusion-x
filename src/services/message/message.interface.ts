@@ -38,3 +38,12 @@ export type TChatParticipants ={
 }
 
 export type TChatParticipantsModel = TChatParticipants & Document & SchemaTimestampsConfig;
+
+export type TUserBlock = {
+  blockedBy: Types.ObjectId;
+  blockedUser: Types.ObjectId;
+  isActive: boolean;
+  blockReason: string;
+}
+
+export type TUserBlockModel = TUserBlock & Document & SchemaTimestampsConfig
