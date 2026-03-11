@@ -46,9 +46,9 @@ export const checkBlockStatus = async (
 
     if (isBlocked) {
       if (isBlocked.blockedBy.toString() === senderId.toString()) {
-        return { status: true, message: 'you blocked this user' };
+        return { status: true, message: 'failed to send message, you blocked this user' };
       } else {
-        return { status: true, message: 'this user blocked you' };
+        return { status: true, message: 'failed to send message, this user blocked you' };
       }
     }
     return { status: false, message: '' };

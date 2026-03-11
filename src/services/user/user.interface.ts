@@ -5,7 +5,7 @@ export type TUser = {
   password: string;
   status: string;
   profileImage: string;
-  deleted: boolean;
+  isDeleted: boolean;
   deletedAt: Date;
   stripeCustomerId: string;
   role: "user" | "organization" | "admin";

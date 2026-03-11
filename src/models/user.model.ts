@@ -12,7 +12,7 @@ const userSchema = new Schema<TUserModel>(
       default: "active",
       enum: ["active", "inactive"],
     },
-    deleted: {
+    isDeleted: {
       type: Boolean,
       default: false,
     },

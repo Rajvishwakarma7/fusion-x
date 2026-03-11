@@ -6,7 +6,10 @@ import mongoose from 'mongoose';
 import { TGenResObj } from '../utils/commonInterface.utils';
 import { HttpStatusCodes as Code, SocketEvents } from '../utils/Enums.utils';
 import ChatParticipants from '../models/chatParticipants.model';
-import { handleConversationUpdate, updateMessageLastSeen } from './socket.helper';
+import {
+  handleConversationUpdate,
+  updateMessageLastSeen,
+} from './socket.helper';
 
 const onlineUsers = new Map();
 
@@ -90,6 +93,11 @@ function handleSocketEvents(socket: Socket, userId: string) {
               messageId: data?.data._id,
             });
           }
+        } else {
+          callback({
+            status: 'error',
+            message: data?.message,
+          });
         }
       } catch (error) {
         console.error('Error in chat:group:send event:', error);
@@ -114,10 +122,14 @@ function handleSocketEvents(socket: Socket, userId: string) {
             callback({
               status: 'sent',
               messageId: data?.data._id,
+              message: data?.data.message,
             });
           }
-        }else{
-          
+        } else {
+          callback({
+            status: 'error',
+            message: data?.message,
+          });
         }
       } catch (error) {
         console.log('Error in chat:direct:send event:', error);
@@ -141,7 +153,9 @@ function handleSocketEvents(socket: Socket, userId: string) {
 
   socket.on(SocketEvents.MESSAGE_SEEN, async (payload) => {
     await updateMessageLastSeen(payload.chatTranscriptId, userId);
-    socket.to(payload.chatTranscriptId).emit(SocketEvents.MESSAGE_SEEN, payload);
+    socket
+      .to(payload.chatTranscriptId)
+      .emit(SocketEvents.MESSAGE_SEEN, payload);
   });
 }
 
