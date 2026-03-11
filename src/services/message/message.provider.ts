@@ -940,12 +940,29 @@ export const blockUser = async (payload: blockUserValidatorType) => {
   try {
     const { userId, blockedUser, isBlock, blockReason } = payload;
 
+    if(userId === blockedUser){
+      return GenResObj(Code.BAD_REQUEST, false, 'You can not block yourself');
+    }
+
     const avlUser = await users.findOne({ _id: blockedUser });
     if (!avlUser) {
       return GenResObj(Code.BAD_REQUEST, false, 'This User not found');
     }
 
     if (isBlock) {
+
+      const isAlreadyBlocked = await UserBlock.findOne({
+        blockedBy: userId,
+        blockedUser,
+      });
+      if (isAlreadyBlocked) {
+        return GenResObj(
+          Code.BAD_REQUEST,
+          false,
+          'User is already blocked by you'
+        );
+      }
+
       await UserBlock.create({
         blockedBy: userId,
         blockedUser,
@@ -953,7 +970,16 @@ export const blockUser = async (payload: blockUserValidatorType) => {
       });
       return GenResObj(Code.OK, true, 'User blocked successfully');
     } else {
-      await UserBlock.deleteMany({
+
+      const isBlocked = await UserBlock.findOne({
+        blockedBy: userId,
+        blockedUser,
+      })
+      if(!isBlocked){
+        return GenResObj(Code.BAD_REQUEST, false, 'User is not blocked by you');
+      }
+
+      await UserBlock.deleteOne({
         blockedBy: userId,
         blockedUser,
       });
