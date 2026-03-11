@@ -12,6 +12,7 @@
   "author": "Raj Vishwakarma",
   "license": "ISC",
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
     "arktype": "^2.1.29",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",

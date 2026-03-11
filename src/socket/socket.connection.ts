@@ -84,7 +84,8 @@ function handleSocketEvents(socket: Socket, userId: string) {
           socket
             .to(payload.chatTranscriptId)
             .emit(SocketEvents.GROUP_RECEIVE, data?.data);
-
+          
+            // manage list thread
           handleConversationUpdate(payload.chatTranscriptId, userId);
 
           if (callback) {
@@ -116,6 +117,7 @@ function handleSocketEvents(socket: Socket, userId: string) {
             .to(payload.chatTranscriptId)
             .emit(SocketEvents.DIRECT_RECEIVE, data?.data);
 
+            // manage list thread
           handleConversationUpdate(payload.chatTranscriptId, userId);
 
           if (callback) {
