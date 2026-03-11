@@ -4,7 +4,10 @@ import MessageMedia from '../../models/messageMedia.model.js';
 import users from '../../models/user.model.js';
 import { HttpStatusCodes as Code } from '../../utils/Enums.utils.js';
 import { GenResObj } from '../../utils/responseFormatter.utils.js';
-import { uploadMessageMediaHelper } from './message.helper.js';
+import {
+  checkBlockStatus,
+  uploadMessageMediaHelper,
+} from './message.helper.js';
 
 import {
   blockUserValidatorType,
@@ -261,7 +264,16 @@ export const sendMessage = async (payload: createMessageType) => {
         'User is not a member of this chat transcript or inactive or deleted'
       );
     }
+
     const chatType = chatTranscript.chatType;
+
+    // check block status
+    if (chatType === 'ONE_TO_ONE') {
+      const isBlocked = await checkBlockStatus(senderId, chatTranscriptId);
+      if(isBlocked.status){
+        return GenResObj(Code.BAD_REQUEST, false, isBlocked.message);
+      }
+    }
 
     const newMessage = await Message.create({
       chatTranscriptId,
@@ -772,10 +784,13 @@ export const getHeaderInfo = async (payload: GroupChatValidatorType) => {
         return GenResObj(Code.BAD_REQUEST, false, 'Chat transcript not found');
       }
 
+      const isBlocked = await checkBlockStatus(userId, chatTranscriptId);
+
       const resObj = {
         chatTranscriptId,
         chatType,
         userInfo: joinedUser.userId,
+        isBlocked,
       };
 
       return GenResObj(
@@ -784,6 +799,7 @@ export const getHeaderInfo = async (payload: GroupChatValidatorType) => {
         'Header info fetched successfully',
         resObj
       );
+      
     } else if (chatType === 'GROUP') {
       const topThreeUsers = await ChatParticipants.find({
         chatTranscriptId,
@@ -940,7 +956,7 @@ export const blockUser = async (payload: blockUserValidatorType) => {
   try {
     const { userId, blockedUser, isBlock, blockReason } = payload;
 
-    if(userId === blockedUser){
+    if (userId === blockedUser) {
       return GenResObj(Code.BAD_REQUEST, false, 'You can not block yourself');
     }
 
@@ -950,7 +966,6 @@ export const blockUser = async (payload: blockUserValidatorType) => {
     }
 
     if (isBlock) {
-
       const isAlreadyBlocked = await UserBlock.findOne({
         blockedBy: userId,
         blockedUser,
@@ -970,13 +985,16 @@ export const blockUser = async (payload: blockUserValidatorType) => {
       });
       return GenResObj(Code.OK, true, 'User blocked successfully');
     } else {
-
       const isBlocked = await UserBlock.findOne({
         blockedBy: userId,
         blockedUser,
-      })
-      if(!isBlocked){
-        return GenResObj(Code.BAD_REQUEST, false, 'User is not blocked by you');
+      });
+      if (!isBlocked) {
+        return GenResObj(
+          Code.BAD_REQUEST,
+          false,
+          'User is not blocked, can not unblock'
+        );
       }
 
       await UserBlock.deleteOne({

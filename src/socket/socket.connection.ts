@@ -100,6 +100,7 @@ function handleSocketEvents(socket: Socket, userId: string) {
     socket.on(SocketEvents.DIRECT_SEND, async (payload, callback) => {
       try {
         payload.senderId = userId;
+
         const { code, data }: TGenResObj = await sendMessage(payload);
 
         if (code === Code.OK) {
@@ -115,6 +116,8 @@ function handleSocketEvents(socket: Socket, userId: string) {
               messageId: data?.data._id,
             });
           }
+        }else{
+          
         }
       } catch (error) {
         console.log('Error in chat:direct:send event:', error);
@@ -143,21 +146,3 @@ function handleSocketEvents(socket: Socket, userId: string) {
 }
 
 export { initSocket, onlineUsers };
-
-
-//  block and blocked users (notifications) api and socket events,
-
-
-// group message api and one to one message api , with ( last seen users)
-
-// {
-//   messages: [...],
-//   participants: [
-//     { userId, lastReadAt },
-//     { userId, lastReadAt }
-//   ]
-// }
-
-// if (message.createdAt <= receiver.lastReadAt) {
-//    showBlueTick()
-// }

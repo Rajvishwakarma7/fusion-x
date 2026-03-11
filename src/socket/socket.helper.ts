@@ -72,10 +72,12 @@ export async function handleConversationUpdate(
   }
 }
 
-
-export const updateMessageLastSeen = async(chatTranscriptId:String,userId:String)=>{
+export const updateMessageLastSeen = async (
+  chatTranscriptId: string,
+  userId: string
+) => {
   try {
-      await ChatParticipants.findOneAndUpdate(
+    await ChatParticipants.findOneAndUpdate(
       { chatTranscriptId, userId },
       {
         $set: {
@@ -88,4 +90,5 @@ export const updateMessageLastSeen = async(chatTranscriptId:String,userId:String
     console.log('error is coming from update message last seen:>> ', error);
     throw error;
   }
-}
+};
+
