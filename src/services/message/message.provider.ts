@@ -962,7 +962,7 @@ export const blockUser = async (payload: blockUserValidatorType) => {
 
     const avlUser = await users.findOne({ _id: blockedUser });
     if (!avlUser) {
-      return GenResObj(Code.BAD_REQUEST, false, 'This User not found');
+      return GenResObj(Code.BAD_REQUEST, false, 'User not found, not able to block');
     }
 
     if (isBlock) {
@@ -993,7 +993,7 @@ export const blockUser = async (payload: blockUserValidatorType) => {
         return GenResObj(
           Code.BAD_REQUEST,
           false,
-          'User is not blocked, can not unblock'
+          'User is already unblocked'
         );
       }
 
